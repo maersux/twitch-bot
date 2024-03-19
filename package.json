@@ -1,0 +1,17 @@
+{
+  "name": "maersbot",
+  "version": "24.3.19",
+  "description": "basic twitch bot",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "maersux",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "node-fetch": "^3.3.2",
+    "ws": "^8.16.0"
+  }
+}
