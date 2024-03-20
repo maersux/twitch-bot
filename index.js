@@ -1,8 +1,14 @@
 import { TwitchSubscriber } from './misc/TwitchSubscriber.js';
 
-const subscriber = new TwitchSubscriber();
-subscriber.connectToWebSocket().then(async () => {
-	await subscriber.subscribeToEvent('channel.chat.message', '995903564');
-}).catch(err => {
-	console.log('An error occurred: ' + err);
-});
+try {
+	const subscriber = new TwitchSubscriber();
+	await subscriber.connectToWebSocket();
+
+	const channelsToJoin = ['97123979', '48048659', '50985620'];
+	await Promise.all(channelsToJoin.map(async channel => {
+		await subscriber.subscribeToEvent('channel.chat.message', channel);
+	}));
+
+} catch (e) {
+	console.log(`An error occurred: ${e}`);
+}
