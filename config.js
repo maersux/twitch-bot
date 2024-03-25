@@ -34,6 +34,12 @@ const config = {
 			'user:manage:whispers',
 			'user:bot'
 		]
+	},
+	db: {
+		url: process.env.DB_URL,
+		name: process.env.DB_NAME,
+		user: process.env.DB_USER,
+		pass: process.env.DB_PASS
 	}
 };
 

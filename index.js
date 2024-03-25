@@ -1,6 +1,9 @@
+import { setupBot } from './misc/Bot.js';
 import { TwitchSubscriber } from './misc/TwitchSubscriber.js';
 
 try {
+	await setupBot();
+
 	const subscriber = new TwitchSubscriber();
 	await subscriber.connectToWebSocket();
 
