@@ -1,11 +1,13 @@
 import config from '../config.js';
+import { commands } from './Bot.js';
+import { sendMessage } from './Twitch.js';
 
 export class EventHandler {
 	static channelChatMessage = async (event) => {
 		// Komplette Nachricht vom EventSub
 		// console.log(`Received: ${JSON.stringify(event)}`);
 
-		const prefix = '-' || config.bot.prefix;
+		const prefix = '_' || config.bot.prefix;
 
 		if (!event.message.text.startsWith(prefix)) return;
 		if (event.chatter_user_id === config.bot.userId) return;
@@ -29,9 +31,29 @@ export class EventHandler {
 				id: event.chatter_user_id,
 				login: event.chatter_user_login,
 				name: event.chatter_user_name,
+			},
+
+			async send(message, reply = true) {
+				const parent = reply ? event.message_id : '';
+				await sendMessage(event.broadcaster_user_id, message, parent);
 			}
 		};
 
-		console.log(msg);
+		const command = commands[commandName];
+		if (!command) return;
+
+		try {
+			const responseFunction = text => ({text, reply: true});
+			const response = await command.execute(msg, responseFunction);
+
+			if (response?.text) {
+				const parent = response?.reply ? event.message_id : '';
+
+				await sendMessage(event.broadcaster_user_id, response.text, parent);
+			}
+		} catch (e) {
+			const parent = event.message_id;
+			await sendMessage(event.broadcaster_user_id, `FeelsDankMan ${e}`, parent);
+		}
 	}
 }
