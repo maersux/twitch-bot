@@ -1,11 +1,9 @@
-import fetch from 'node-fetch';
 import WebSocket from 'ws';
 import config from '../config.js';
+import { EventHandler } from './EventHandler.js';
 
 export class TwitchSubscriber {
 	constructor() {
-		this.token = config.twitch.token;
-		this.clientId = config.twitch.clientId;
 		this.socket = null;
 		this.sessionId = null;
 	}
@@ -29,8 +27,8 @@ export class TwitchSubscriber {
 			method: 'POST',
 			body: JSON.stringify(payload),
 			headers: {
-				'Authorization': `Bearer ${this.token}`,
-				'Client-Id': this.clientId,
+				'Authorization': `Bearer ${config.twitch.token}`,
+				'Client-Id': config.twitch.clientId,
 				'Content-Type': 'application/json'
 			}
 		};
@@ -43,42 +41,55 @@ export class TwitchSubscriber {
 		}
 	}
 
-	connectToWebSocket() {
+	async connectToWebSocket() {
 		return new Promise((resolve, reject) => {
 			this.socket = new WebSocket('wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds=600');
 
 			this.socket.on('open', () => {
-				console.log('Connected to Twitch');
+				const date = new Date();
+				console.log(`${date.toISOString()} - Connected to Twitch`);
 			});
 
-			this.socket.on('close', () => {
-				console.log('Disconnected from Twitch');
+			this.socket.on('close', (e) => {
+				const date = new Date();
+				console.log(`${date.toISOString()} - Disconnected from Twitch: ${e}`);
 			});
 
-			this.socket.on('error', err => {
-				console.error('Error occurred:', err);
+			this.socket.on('error', (e) => {
+				const date = new Date();
+				console.error(`${date.toISOString()} - Error occurred: ${e}`);
 			});
 
 			this.socket.on('message', data => {
 				const message = JSON.parse(data);
 
 				switch (message.metadata.message_type) {
-					case 'session_welcome':
+					case 'session_welcome': {
 						this.sessionId = message.payload.session.id;
 						console.log('Received welcome message. Session id:', this.sessionId);
 						resolve();
-						break;
+						return;
+					}
 
-					case 'session_reconnect':
+					case 'session_reconnect': {
 						console.log('Received reconnect message. Reconnecting to:', message.payload.session.reconnect_url);
 						this.socket.close();
 						this.socket = new WebSocket(message.payload.session.reconnect_url);
 						this.connectToWebSocket();
-						break;
+						return;
+					}
 
-					default:
-						console.log(`Received: ${data}`);
-						break;
+					default: {
+						// Dynamisches Suchen der EventHandler function je nach event name.
+						// wenn event = channel.chat.message dann: EventHandler::channelChatMessage()
+						const event = message.payload.event;
+						const eventName = this.toCamelCase(message.metadata.subscription_type);
+						if (typeof EventHandler[eventName] === 'function') {
+							EventHandler[eventName](event);
+						}
+
+						return;
+					}
 				}
 			});
 
@@ -87,5 +98,9 @@ export class TwitchSubscriber {
 				this.socket.pong();
 			});
 		});
+	}
+
+	toCamelCase(str = '') {
+		return str.replace(/\.([a-z])/g, (match, letter) => letter.toUpperCase());
 	}
 }

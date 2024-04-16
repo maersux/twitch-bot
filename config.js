@@ -38,10 +38,6 @@ const config = {
 			'user:read:subscriptions'
 		]
 	},
-	spotify: {
-		clientId: process.env.SPOTIFY_CLIENT_ID,
-		clientSecret: process.env.SPOTIFY_CLIENT_SECRET
-	},
 	db: {
 		url: process.env.DB_URL,
 		name: process.env.DB_NAME,
