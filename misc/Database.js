@@ -1,48 +1,45 @@
-import mysql from 'mysql2/promise';
+import mariadb from 'mariadb';
+import Redis from 'ioredis';
 import config from '../config.js';
+import { logger } from './Logger.js';
 
-let pool;
+export const db = {
+	pool: null,
 
-async function getDB() {
-	if (!pool) {
-		const { url, name, user, pass } = config.db;
-		const connectionString = `mysql://${user}:${pass}@${url}/${name}`;
-		pool = await mysql.createPool(connectionString);
-	}
-	return await pool.getConnection();
-}
+	initialize: async function() {
+		this.pool = mariadb.createPool({
+			user: config.db.user,
+			password: config.db.pass,
+			database: config.db.name,
+			host: config.db.host,
+		})
+	},
 
-export async function query(query, params = []) {
-	const db = await getDB();
-	try {
-		const [rows] = await db.execute(query, params);
-		db.release();
-		return rows;
-	} catch (error) {
-		db.release();
-		console.error(Date.now(), error);
-		return false;
-	}
-}
+	query: async function(queryParam, params = []) {
+		const connection = await this.pool.getConnection();
 
-export async function queryOne(queryStr, params = []) {
-	try {
-		const result = await query(queryStr, params);
-		return result?.[0] || [];
-	} catch (error) {
-		const date = new Date();
-		console.error(date.toISOString(), `Error occurred while executing query: ${error.message}`);
-		return [];
-	}
-}
+		let result;
+		try {
+			result = await connection.query(queryParam, params);
+		} catch (e) {
+			logger.error(e);
+		} finally {
+			connection.release();
+		}
 
-export async function entryExists(queryStr, params = []) {
-	try {
-		const rows = await query(queryStr, params);
+		return result || [];
+	},
+
+	queryOne: async function(queryStr, params = [], addLimit = true) {
+		const result = await this.query(`${queryStr}${addLimit ? ' LIMIT 1' : ''}`, params);
+		return result?.[0] || false;
+	},
+
+	entryExists: async function(queryStr, params = [], addLimit = true) {
+		const rows = await this.query(`${queryStr}${addLimit ? ' LIMIT 1' : ''}`, params);
 		return rows.length > 0;
-	} catch (error) {
-		const date = new Date();
-		console.error(date.toISOString(), error);
-		return false;
 	}
 }
+
+export const redis = new Redis();
+redis.nc = 'tb';

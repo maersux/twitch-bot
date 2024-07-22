@@ -1,28 +1,39 @@
 import * as fs from 'fs';
+import { logger } from './Logger.js';
+import { db } from './Database.js';
 
-export let runningSince = 0;
-export let commands = {};
+export const bot = {
+  ignoredUsers: new Set,
+  runningSince: 0,
+  commands: {},
 
-const loadCommands = async () => {
-	const commandFiles = fs.readdirSync(`./commands`).filter(file => file.endsWith('.js'));
+  initialize: async function() {
+    this.runningSince = new Date();
 
-	for (const file of commandFiles) {
-		const command = await import(`../commands/${file}?${Date.now()}`);
+    const [ignoredUsers] = await Promise.all([
+      db.query(`SELECT user_id FROM ignored_users`),
+      this.loadCommands()
+    ]);
 
-		if (!command?.default?.name) {
-			console.error(`Failed to load Command ${file}`);
-			continue;
-		}
+    this.ignoredUsers = new Set(ignoredUsers.map(user => user.user_id));
+  },
 
-		commands[command.default.name] = command.default;
+  loadCommands: async function() {
+    const commandFiles = fs.readdirSync(`./commands`).filter(file => file.endsWith('.js'));
 
-		for (const alias of command.default.aliases || []) {
-			commands[alias] = commands[command.default.name];
-		}
-	}
-}
+    for (const file of commandFiles) {
+      const command = await import(`../commands/${file}?${Date.now()}`);
 
-export const setupBot = async () => {
-	runningSince = Date.now();
-	await loadCommands();
-}
+      if (!command?.default?.name) {
+        logger.error(`Failed to load Command ${file}`);
+        continue;
+      }
+
+      this.commands[command.default.name] = command.default;
+
+      for (const alias of command.default.aliases || []) {
+        this.commands[alias] = this.commands[command.default.name];
+      }
+    }
+  }
+};

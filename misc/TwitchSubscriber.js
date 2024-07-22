@@ -1,6 +1,7 @@
 import WebSocket from 'ws';
 import config from '../config.js';
 import { EventHandler } from './EventHandler.js';
+import { logger } from './Logger.js';
 
 export class TwitchSubscriber {
 	constructor() {
@@ -47,17 +48,17 @@ export class TwitchSubscriber {
 
 			this.socket.on('open', () => {
 				const date = new Date();
-				console.log(`${date.toISOString()} - Connected to Twitch`);
+				logger.log(`${date.toISOString()} - Connected to Twitch`);
 			});
 
 			this.socket.on('close', (e) => {
 				const date = new Date();
-				console.log(`${date.toISOString()} - Disconnected from Twitch: ${e}`);
+				logger.log(`${date.toISOString()} - Disconnected from Twitch: ${e}`);
 			});
 
 			this.socket.on('error', (e) => {
 				const date = new Date();
-				console.error(`${date.toISOString()} - Error occurred: ${e}`);
+				logger.error(`${date.toISOString()} - Error occurred: ${e}`);
 			});
 
 			this.socket.on('message', data => {
@@ -66,13 +67,13 @@ export class TwitchSubscriber {
 				switch (message.metadata.message_type) {
 					case 'session_welcome': {
 						this.sessionId = message.payload.session.id;
-						console.log('Received welcome message. Session id:', this.sessionId);
+						logger.log('Received welcome message. Session id:', this.sessionId);
 						resolve();
 						return;
 					}
 
 					case 'session_reconnect': {
-						console.log('Received reconnect message. Reconnecting to:', message.payload.session.reconnect_url);
+						logger.log('Received reconnect message. Reconnecting to:', message.payload.session.reconnect_url);
 						this.socket.close();
 						this.socket = new WebSocket(message.payload.session.reconnect_url);
 						this.connectToWebSocket();
@@ -94,7 +95,7 @@ export class TwitchSubscriber {
 			});
 
 			this.socket.on('ping', () => {
-				console.log('Received ping. Sending pong...');
+				logger.log('Received ping. Sending pong...');
 				this.socket.pong();
 			});
 		});

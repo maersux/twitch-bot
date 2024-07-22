@@ -1,8 +1,11 @@
-import { setupBot } from './misc/Bot.js';
+import { bot } from './misc/Bot.js';
+import { db } from './misc/Database.js';
 import { TwitchSubscriber } from './misc/TwitchSubscriber.js';
+import { logger } from './misc/Logger.js';
 
 try {
-	await setupBot();
+	await db.initialize()
+	await bot.initialize()
 
 	const subscriber = new TwitchSubscriber();
 	await subscriber.connectToWebSocket();
@@ -14,5 +17,5 @@ try {
 	}));
 
 } catch (e) {
-	console.log(`An error occurred: ${e}`);
+	logger.log(`An error occurred: ${e}`);
 }
