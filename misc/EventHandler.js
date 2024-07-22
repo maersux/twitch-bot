@@ -69,8 +69,12 @@ export class EventHandler {
     }
 
     try {
-      const responseFunction = text => ({ text, reply: true });
+      const responseFunction = (text, { reply = true, error = false } = {}) => ({ text, reply, error });
       const response = await command.execute(msg, responseFunction);
+
+      if (response?.error) {
+        cooldown.remove(cooldownKey);
+      }
 
       if (response?.text) {
         const parent = response?.reply ? event.message_id : '';
