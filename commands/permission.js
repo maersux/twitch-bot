@@ -1,19 +1,19 @@
-import { getUserPermission, permissions, setUserPermissionForBot } from '../utils/permissions.js';
+import config from '../config.js';
+import { getUserPermissionForBot, permissions, setUserPermissionForBot } from '../utils/permissions.js';
 import { antiPing } from '../utils/utils.js';
 import { getUserId } from '../utils/api/ivr.js';
-import config from '../config.js';
 import { duration } from '../utils/cooldown.js';
 
 export default {
   name: 'permission',
   description: 'get/update a users permission',
-  cooldown: duration.sm,
+  cooldown: duration.short,
   usage: '<status | default | admin> <user>',
-  execute: async (msg, response) => {
+  async execute(msg, response) {
     if (!msg.args.length) return response(`usage: ${this.usage}`, { error: true });
 
     const permission = msg.args[0].toLowerCase();
-    const user = msg.args[1].replace(/[#@,]/g, '').toLowerCase() || msg.user.login;
+    const user = msg.args[1]?.toLowerCase()?.replace(/[#@,]/g, '') || msg.user.login;
 
     const userId = await getUserId(user);
     if (!userId) {
@@ -22,10 +22,10 @@ export default {
 
     const isCurrentUser = userId === msg.user.id;
 
-    const currentPermission = await getUserPermission(userId);
+    const currentPermission = await getUserPermissionForBot(userId);
     const currentPermissionName = Object.keys(permissions).find(key => permissions[key] === currentPermission);
 
-    if (permission === 'stats') {
+    if (permission === 'status') {
       const userText = isCurrentUser ? 'your' : `${antiPing(user)}'s`;
       return response(`${userText} current permission is ${currentPermissionName}`);
     }
@@ -35,7 +35,13 @@ export default {
     if (permission === 'owner') return response('NOIDONTTHINKSO you cannot give another user owner permissions');
 
     const permissionId = permissions[permission];
-    if (permissionId === undefined) return response(`FeelsDankMan permission ${permission} doesn't exist. ${Object.keys(permissions).join(', ')}`);
+    if (permissionId === undefined) {
+      return response(`FeelsDankMan permission ${permission} doesn't exist. ${Object.keys(permissions).join(', ')}`);
+    }
+
+    if (currentPermission === permissionId) {
+      return response(`FeelsDankMan user ${antiPing(user)} already has the permission ${permission}`);
+    }
 
     await setUserPermissionForBot(userId, permissionId);
     return response(`user ${antiPing(user)} now has the permission ${permission}`);

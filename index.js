@@ -1,21 +1,14 @@
-import { bot } from './misc/Bot.js';
-import { db } from './misc/Database.js';
-import { TwitchSubscriber } from './misc/TwitchSubscriber.js';
-import { logger } from './misc/Logger.js';
+import { Bot } from './misc/Bot.js';
+import { Database } from './misc/Database.js';
 
 try {
-	await db.initialize()
-	await bot.initialize()
+  global.db = new Database();
+  await db.initialize();
 
-	const subscriber = new TwitchSubscriber();
-	await subscriber.connectToWebSocket();
+  global.bot = new Bot();
+  await bot.initialize();
 
-	// const channelsToJoin = ['97123979', '48048659', '50985620'];
-	const channelsToJoin = ['995903564'];
-	await Promise.all(channelsToJoin.map(async channel => {
-		await subscriber.subscribeToEvent('channel.chat.message', channel);
-	}));
-
+  bot.log.info('bot ready');
 } catch (e) {
-	logger.log(`An error occurred: ${e}`);
+  console.error(`An error occurred: ${e}`);
 }

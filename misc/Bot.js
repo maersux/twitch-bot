@@ -1,14 +1,20 @@
 import * as fs from 'fs';
-import { logger } from './Logger.js';
-import { db } from './Database.js';
+import { Logger } from './Logger.js';
+import { ConduitClient } from './ConduitClient.js';
 
-export const bot = {
-  ignoredUsers: new Set,
-  runningSince: 0,
-  commands: {},
+export class Bot {
+  constructor() {
+    this.log = new Logger();
+    this.conduitClient = new ConduitClient();
+    this.commands = {}
+    this.channels = new Set();
+    this.ignoredUsers = new Set();
+    this.uptime = 0;
+    this.commandsExecuted = 0;
+  }
 
-  initialize: async function() {
-    this.runningSince = new Date();
+  async initialize() {
+    this.uptime = new Date();
 
     const [ignoredUsers] = await Promise.all([
       db.query(`SELECT user_id FROM ignored_users`),
@@ -16,16 +22,18 @@ export const bot = {
     ]);
 
     this.ignoredUsers = new Set(ignoredUsers.map(user => user.user_id));
-  },
 
-  loadCommands: async function() {
+    await this.conduitClient.initialize();
+  }
+
+  async loadCommands() {
     const commandFiles = fs.readdirSync(`./commands`).filter(file => file.endsWith('.js'));
 
     for (const file of commandFiles) {
       const command = await import(`../commands/${file}?${Date.now()}`);
 
       if (!command?.default?.name) {
-        logger.error(`Failed to load Command ${file}`);
+        this.log.error(`Failed to load Command ${file}`);
         continue;
       }
 
@@ -36,4 +44,4 @@ export const bot = {
       }
     }
   }
-};
+}

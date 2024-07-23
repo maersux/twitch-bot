@@ -1,6 +1,7 @@
 export const ivr = async (endpoint) => {
   try {
     const response = await fetch(`https://api.ivr.fi/v2/twitch/${endpoint}`);
+
     return await response.json();
   } catch (err) {
     return [];
@@ -10,7 +11,7 @@ export const ivr = async (endpoint) => {
 export const getUser = async function(user) {
   const encodedUser = encodeURIComponent(user);
 
-  const data = await getUserById(encodedUser) ?? await getUserByLogin(encodedUser);
+  const data = await getUserById(encodedUser) || await getUserByLogin(encodedUser);
   if (data?.id) return data;
 
   return false;

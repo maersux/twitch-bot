@@ -4,7 +4,11 @@ CREATE TABLE `channels` (
   `login` VARCHAR(50),
   `prefix` VARCHAR(25),
   `added` TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
-  `mode` TINYINT(1)
+  `mode` TINYINT(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `conduits` (
+  `id` VARCHAR(255) NOT NULL PRIMARY KEY
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `ignored_users` (
@@ -13,13 +17,20 @@ CREATE TABLE `ignored_users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `permissions` (
-  `user_id` VARCHAR(25),
+  `user_id` VARCHAR(25) UNIQUE,
   `permission` INT(2)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `tokens` (
-  `name` varchar(255) NOT NULL,
-  `access_token` varchar(255) NOT NULL,
-  `refresh_token` varchar(255) DEFAULT NULL,
-  `expires_at` varchar(255) DEFAULT NULL
+  `name` VARCHAR(255) NOT NULL PRIMARY KEY,
+  `access_token` VARCHAR(255) NOT NULL,
+  `refresh_token` VARCHAR(255) DEFAULT NULL,
+  `expires_at` VARCHAR(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `subscriptions` (
+  `id` VARCHAR(50) NOT NULL PRIMARY KEY,
+  `type` VARCHAR(50),
+  `version` INT(2),
+  `channel_id` VARCHAR(20)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
