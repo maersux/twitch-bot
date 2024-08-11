@@ -11,7 +11,7 @@ export const permissions = {
 
 export const getUserPermissionForBot = async (userId) => {
   const result = await db.queryOne(`SELECT permission FROM permissions WHERE user_id = ?`, [userId]);
-  return result.permission || 0;
+  return result?.permission || 0;
 };
 
 export const setUserPermissionForBot = async (userId, permission) => {
@@ -21,15 +21,15 @@ export const setUserPermissionForBot = async (userId, permission) => {
 export const getUserPermission = async (userId, badges = []) => {
   const savedPermission = await getUserPermissionForBot(userId);
 
-  const permissions = [savedPermission];
+  const userPermissions = [savedPermission];
 
   for (const badge of badges || []) {
-    if (badge?.set_id === 'vip') permissions.push(1);
-    if (badge?.set_id === 'moderator') permissions.push(2);
-    if (badge?.set_id === 'broadcaster') permissions.push(3);
+    if (badge?.set_id === 'vip') userPermissions.push(permissions.vip);
+    if (badge?.set_id === 'moderator') userPermissions.push(permissions.moderator);
+    if (badge?.set_id === 'broadcaster') userPermissions.push(permissions.broadcaster);
   }
 
-  if (userId === config.owner.userId) permissions.push(5);
+  if (userId === config.owner.userId) userPermissions.push(permissions.owner);
 
-  return Math.max(...permissions);
+  return Math.max(...userPermissions);
 };
