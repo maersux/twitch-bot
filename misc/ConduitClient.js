@@ -79,7 +79,7 @@ export class ConduitClient {
 		}
 	}
 
-	async subscribeToEvents(channelIds, subscriptionTopics) {
+	async subscribeToEvents(channelIds, subscriptionTopics = this.topics) {
 		for (const channelId of channelIds) {
 			await this.addSubscriptions(channelId, subscriptionTopics);
 		}

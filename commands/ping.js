@@ -10,7 +10,7 @@ export default {
   cooldown: duration.veryShort,
   async execute(msg, response) {
     const messages = [
-      `🏓 PONG`,
+      `🏓 ${msg.command.trigger === 'pong' ? 'PING' : 'PONG'}`,
       `bot uptime: ${timeSince(bot.uptime)}`,
       `channels: ${bot.channels.size}`
     ];

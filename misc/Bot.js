@@ -6,7 +6,7 @@ export class Bot {
   constructor() {
     this.log = new Logger();
     this.conduitClient = new ConduitClient();
-    this.commands = {}
+    this.commands = new Map();
     this.channels = new Set();
     this.ignoredUsers = new Set();
     this.uptime = 0;
