@@ -16,12 +16,14 @@ export class Bot {
   async initialize() {
     this.uptime = new Date();
 
-    const [ignoredUsers] = await Promise.all([
+    const [ignoredUsers, channels] = await Promise.all([
       db.query(`SELECT user_id FROM ignored_users`),
+      db.query(`SELECT user_id FROM channels`),
       this.loadCommands()
     ]);
 
     this.ignoredUsers = new Set(ignoredUsers.map(user => user.user_id));
+    this.channels = new Set(channels.map(channel => channel.user_id));
 
     await this.conduitClient.initialize();
   }

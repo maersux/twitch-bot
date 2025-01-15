@@ -42,7 +42,7 @@ export default {
            return response(`channel ${antiPing(channel)} is not joined`);
          }
 
-         await bot.conduitClient.unsubscribeFromEvents(channelId);
+         await bot.conduitClient.unsubscribeFromEvents([channelId]);
          return response(`parted channel ${antiPing(channel)}`);
        }
 

@@ -37,13 +37,9 @@ export class ConduitClient {
 
 		await addShardsToConduit(this.conduitId, [shard]);
 
-		const channels = await db.query('SELECT user_id FROM channels');
-		const channelIds = channels.map(c => c.user_id);
-		bot.channels = new Set(channelIds);
-
 		await Promise.all([
-			this.subscribeToEvents([config.bot.userId], this.botTopics),
-			this.subscribeToEvents(channelIds, this.topics)
+			this.subscribeToEvents([config.bot.userId]),
+			this.subscribeToEvents(bot.channels)
 		]);
 	}
 
@@ -85,7 +81,7 @@ export class ConduitClient {
 		}
 	}
 
-	async unsubscribeFromEvents(channelIds, subscriptionTopics) {
+	async unsubscribeFromEvents(channelIds, subscriptionTopics = this.topics) {
 		for (const channelId of channelIds) {
 			await this.removeSubscriptions(channelId, subscriptionTopics);
 		}
