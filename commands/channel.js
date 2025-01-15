@@ -33,7 +33,12 @@ export default {
            return response(`i'm not modded in ${antiPing(channel)}. please add @${config.bot.username} as a moderator in this channel and retry`);
          }
 
-         await bot.conduitClient.subscribeToEvents([channelId]);
+         await Promise.all([
+           bot.conduitClient.subscribeToEvents([channelId]),
+           db.query(`INSERT INTO channels (user_id, login, prefix) VALUES (?, ?, ?)`, [channelId, channel, config.bot.prefix]),
+           bot.channels.add(channelId)
+         ]);
+
          return response(`joined channel ${antiPing(channel)}`);
        }
 
@@ -42,7 +47,12 @@ export default {
            return response(`channel ${antiPing(channel)} is not joined`);
          }
 
-         await bot.conduitClient.unsubscribeFromEvents([channelId]);
+         await Promise.all([
+           bot.conduitClient.unsubscribeFromEvents([channelId]),
+           db.query(`DELETE FROM channels WHERE user_id = ?`, [channelId]),
+           bot.channels.delete(channelId)
+         ]);
+
          return response(`parted channel ${antiPing(channel)}`);
        }
 
