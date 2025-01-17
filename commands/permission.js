@@ -1,12 +1,10 @@
 import config from '../config.js';
-import { antiPing } from '../utils/utils.js';
 import { getUserId } from '../utils/api/ivr.js';
-import { duration } from '../utils/cooldown.js';
 
 export default {
   name: 'permission',
   description: 'get/update a users permission',
-  cooldown: duration.short,
+  cooldown: bot.cooldown.short,
   usage: '<status | default | admin> <user>',
   async execute(msg, response) {
     if (!msg.args.length) return response(`usage: ${this.usage}`, { error: true });
@@ -25,7 +23,7 @@ export default {
     const currentPermissionName = Object.keys(bot.permissions.list).find(key => bot.permissions.list[key] === currentPermission);
 
     if (permission === 'status') {
-      const userText = isCurrentUser ? 'your' : `${antiPing(user)}'s`;
+      const userText = isCurrentUser ? 'your' : `${bot.utils.antiPing(user)}'s`;
       return response(`${userText} current permission is ${currentPermissionName}`);
     }
 
@@ -39,10 +37,10 @@ export default {
     }
 
     if (currentPermission === permissionId) {
-      return response(`FeelsDankMan user ${antiPing(user)} already has the permission ${permission}`);
+      return response(`FeelsDankMan user ${bot.utils.antiPing(user)} already has the permission ${permission}`);
     }
 
     await bot.permissions.set(userId, permissionId);
-    return response(`user ${antiPing(user)} now has the permission ${permission}`);
+    return response(`user ${bot.utils.antiPing(user)} now has the permission ${permission}`);
   }
 };

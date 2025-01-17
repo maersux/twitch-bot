@@ -2,7 +2,6 @@ import { ConduitShardClient } from './ConduitShardClient.js';
 import * as subscriptions from '../utils/subscriptions.js';
 import { addShardsToConduit, createSubscription, deleteSubscription, getConduitId } from '../utils/api/conduits.js';
 import config from '../config.js';
-import { sleep } from '../utils/utils.js';
 
 export class ConduitClient {
 	topics = [
@@ -57,7 +56,7 @@ export class ConduitClient {
 				continue;
 			}
 
-			await sleep(250);
+			await bot.utils.sleep(250);
 			const subscriptionResponse = await createSubscription(subscriptionSettings);
 			if (subscriptionResponse?.id) {
 				await db.query('INSERT INTO subscriptions (id, type, version, channel_id) VALUES (?, ?, ?, ?)', [subscriptionResponse.id, topic.type, topic.version, channelId]);
