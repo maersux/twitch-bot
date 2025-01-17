@@ -110,7 +110,7 @@ export const getModeratingChannels = async () => {
   let cursor;
 
   do {
-    const response = await helix(`moderation/channels?user_id=${config.bot.userId}&after=${cursor || ''}`, 'GET', null, true);
+    const response = await helix(`moderation/channels?user_id=${config.bot.userId}&after=${cursor || ''}&first=100`, 'GET', null, true);
     cursor = response?.pagination?.cursor || null;
 
     for (const channel of response?.data || []) {
