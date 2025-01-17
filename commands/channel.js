@@ -1,5 +1,4 @@
-import { getUserId } from '../utils/api/ivr.js';
-import { getModeratingChannels } from '../utils/api/helix.js';
+import { getModeratingChannels } from '../utils/apis/helix.js';
 import config from '../config.js';
 
 export default {
@@ -15,48 +14,54 @@ export default {
     const action = msg.args[0].toLowerCase();
     const channel = msg.args[1].toLowerCase().replace(/[#@,]/g, '');
 
-    const channelId = await getUserId(channel);
+    const channelId = await bot.api.ivr.getUserId(channel);
     if (!channelId) {
       return response(`FeelsDankMan channel ${channel} not found`);
     }
 
-     switch (action) {
-       case 'join': {
-         if (bot.channels.has(channelId)) {
-           return response(`already joined channel ${bot.utils.antiPing(channel)}`);
-         }
+    switch (action) {
+      case 'join': {
+        if (bot.channels.has(channelId)) {
+          return response(`already joined channel ${bot.utils.antiPing(channel)}`);
+        }
 
-         const moderatedChannels = await getModeratingChannels();
-         if (!moderatedChannels.has(channelId)) {
-           return response(`i'm not modded in ${bot.utils.antiPing(channel)}. please add @${config.bot.username} as a moderator in this channel and retry`);
-         }
+        const moderatedChannels = await getModeratingChannels();
+        if (!moderatedChannels.has(channelId)) {
+          return response(
+            `i'm not modded in ${bot.utils.antiPing(channel)}. please add @${config.bot.username} as a moderator in this channel and retry`
+          );
+        }
 
-         await Promise.all([
-           bot.conduitClient.subscribeToEvents([channelId]),
-           db.query(`INSERT INTO channels (user_id, login, prefix) VALUES (?, ?, ?)`, [channelId, channel, config.bot.prefix]),
-           bot.channels.add(channelId)
-         ]);
+        await Promise.all([
+          bot.conduitClient.subscribeToEvents([channelId]),
+          bot.db.query(`INSERT INTO channels (userId, login, prefix) VALUES (?, ?, ?)`, [
+            channelId,
+            channel,
+            config.bot.prefix
+          ]),
+          bot.channels.add(channelId)
+        ]);
 
-         return response(`joined channel ${bot.utils.antiPing(channel)}`);
-       }
+        return response(`joined channel ${bot.utils.antiPing(channel)}`);
+      }
 
-       case 'part': {
-         if (!bot.channels.has(channelId)) {
-           return response(`channel ${bot.utils.antiPing(channel)} is not joined`);
-         }
+      case 'part': {
+        if (!bot.channels.has(channelId)) {
+          return response(`channel ${bot.utils.antiPing(channel)} is not joined`);
+        }
 
-         await Promise.all([
-           bot.conduitClient.unsubscribeFromEvents([channelId]),
-           db.query(`DELETE FROM channels WHERE user_id = ?`, [channelId]),
-           bot.channels.delete(channelId)
-         ]);
+        await Promise.all([
+          bot.conduitClient.unsubscribeFromEvents([channelId]),
+          bot.db.query(`DELETE FROM channels WHERE userId = ?`, [channelId]),
+          bot.channels.delete(channelId)
+        ]);
 
-         return response(`parted channel ${bot.utils.antiPing(channel)}`);
-       }
+        return response(`parted channel ${bot.utils.antiPing(channel)}`);
+      }
 
-       default: {
-         return response(`usage: ${this.usage}`, { error: true });
-       }
-     }
+      default: {
+        return response(`usage: ${this.usage}`, { error: true });
+      }
+    }
   }
-}
+};

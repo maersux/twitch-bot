@@ -1,5 +1,5 @@
 import config from '../config.js';
-import * as chatMessage from '../misc/events/chatMessage.js';
+import * as chatMessage from './events/chatMessage.js';
 
 export const channelChatMessage = {
   type: 'channel.chat.message',

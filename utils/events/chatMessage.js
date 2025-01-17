@@ -1,18 +1,17 @@
 import config from '../../config.js';
-import { sendAction, sendMessage } from '../../utils/api/helix.js';
+import { sendAction, sendMessage } from '../apis/helix.js';
 
 export const channelChatMessage = async (event) => {
-  const channelDb = await db.queryOne(
-    'SELECT prefix FROM channels WHERE user_id=?',
-    [event.broadcaster_user_id]
-  );
+  const channelDb = await bot.db.queryOne('SELECT prefix FROM channels WHERE userId=?', [
+    event.broadcaster_user_id
+  ]);
 
   const prefix = channelDb.prefix || config.bot.prefix;
 
   if (!event.message.text.startsWith(prefix)) return;
   if (event.chatter_user_id === config.bot.userId) return;
 
-  const filteredText = event.message.text.replace(/\s+/g, ' ').replace(/[^ -~]+/g, '').trim();
+  const filteredText = event.message.text.replace(/\s+/g, ' ').trim();
   const args = filteredText.slice(prefix.length).trim().split(' ');
   const commandName = args.shift().toLowerCase();
 
@@ -50,11 +49,16 @@ export const channelChatMessage = async (event) => {
     }
   };
 
-  const cooldownKey = `${db.ns}:commands:${command.name}-${msg.user.id}`;
+  const cooldownKey = `${bot.db.ns}:commands:${command.name}-${msg.user.id}`;
   const hasCooldown = bot.cooldown.has(cooldownKey);
   if (hasCooldown && msg.user.perms < bot.permissions.admin) return;
 
-  if (bot.ignoredUsers.has(msg.user.id)) {
+  if (msg.user.perms < bot.permissions.default) {
+    const cooldownKey = `${bot.db.ns}:ignoredUser:${msg.user.id}`;
+    if (await bot.cooldown.has(cooldownKey)) {
+      return;
+    }
+
     return msg.send(`you're on the ignore-list`, true);
   }
 
@@ -69,7 +73,11 @@ export const channelChatMessage = async (event) => {
   }
 
   try {
-    const responseFunction = (text, { reply = true, error = false } = {}) => ({ text, reply, error });
+    const responseFunction = (text, { reply = true, error = false } = {}) => ({
+      text,
+      reply,
+      error
+    });
     const response = await command.execute(msg, responseFunction);
 
     if (response?.error) {
@@ -81,7 +89,7 @@ export const channelChatMessage = async (event) => {
       await sendMessage(event.broadcaster_user_id, response.text, parent);
     }
 
-    bot.commandsExecuted++;
+    await bot.stats.commandExecuted(msg.command.trigger);
   } catch (e) {
     const parent = event.message_id;
     await sendMessage(event.broadcaster_user_id, `FeelsDankMan ${e}`, parent);

@@ -7,10 +7,11 @@ export default {
   async execute(msg, response) {
     const messages = [
       `🏓 ${msg.command.trigger === 'pong' ? 'PING' : 'PONG'}`,
-      `bot uptime: ${bot.utils.timeSince(bot.uptime)}`,
-      `channels: ${bot.channels.size}`
+      `bot uptime: ${bot.utils.timeSince(bot.stats.runningSince)}`,
+      `channels: ${bot.channels.size}`,
+      `commands executed: ${bot.utils.formatNumber(bot.stats.commandsExecuted)}`
     ];
 
-    return msg.sendAction(messages.join(` • `));
+    return msg.sendAction(bot.utils.joinMessage(messages));
   }
 };

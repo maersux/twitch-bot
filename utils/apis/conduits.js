@@ -1,7 +1,7 @@
 import { helix } from './helix.js';
 
 export const getConduitId = async () => {
-  const existingConduit = await db.queryOne('SELECT id FROM conduits');
+  const existingConduit = await bot.db.queryOne('SELECT id FROM conduits');
 
   if (existingConduit) {
     return existingConduit.id;
@@ -77,7 +77,9 @@ export const deleteAllSubscriptions = async () => {
 
   while (hasNextPage) {
     const subscriptions = await helix('eventsub/subscriptions');
-    await Promise.all(subscriptions?.data.map(subscription => deleteSubscription(subscription.id)));
+    await Promise.all(
+      subscriptions?.data.map((subscription) => deleteSubscription(subscription.id))
+    );
 
     hasNextPage = JSON.stringify(subscriptions.pagination) !== '{}';
   }
@@ -87,6 +89,6 @@ export const deleteSubscription = async (subscriptionId) => {
   const endpoint = `eventsub/subscriptions?id=${subscriptionId}`;
   await Promise.all([
     helix(endpoint, 'DELETE'),
-    db.query('DELETE FROM subscriptions WHERE id=?', [subscriptionId])
+    bot.db.query('DELETE FROM subscriptions WHERE id=?', [subscriptionId])
   ]);
 };

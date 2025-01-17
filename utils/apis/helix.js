@@ -9,7 +9,7 @@ export const helix = async (endpoint, method = 'GET', body = {}, useBotAuth = fa
     method: method,
     headers: {
       'Client-Id': config.twitch.clientId,
-      'Authorization': `Bearer ${auth}`,
+      Authorization: `Bearer ${auth}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(body)
@@ -20,33 +20,41 @@ export const helix = async (endpoint, method = 'GET', body = {}, useBotAuth = fa
 
     if (!response.ok) {
       const errorDetails = await response.json();
-      bot.log.error(`Error in ${method} ${url}: ${response.status} ${response.statusText} - ${errorDetails.message || 'No detailed message'}`);
+      bot.log.error(
+        `error in ${method} ${url}: ${response.status} ${response.statusText} - ${errorDetails.message || 'no detailed message'}`
+      );
 
       return null;
     }
 
     try {
+      if (response.status === 204) {
+        return null;
+      }
+
       return await response.json();
     } catch (e) {
-      bot.log.error(`Failed to parse JSON response from ${method} ${url}, content may not be JSON: ${e}`);
+      bot.log.error(
+        `failed to parse JSON response from ${method} ${url}, content may not be JSON: ${e}`
+      );
       return null;
     }
   } catch (e) {
-    bot.log.error(`Network error in ${method} ${endpoint}: ${e}`);
+    bot.log.error(`network error in ${method} ${endpoint}: ${e}`);
     return null;
   }
 };
 
 export const getBotAuthToken = async () => {
-  const tokenData = await db.queryOne(
-    'SELECT access_token, expires_at, refresh_token FROM tokens WHERE name = ?',
+  const tokenData = await bot.db.queryOne(
+    'SELECT accessToken, expiresAt, refreshToken FROM tokens WHERE name = ?',
     ['bot-token']
   );
 
   const currentTime = Date.now();
 
-  if (tokenData && Number(tokenData.expires_at) > currentTime) {
-    return tokenData.access_token;
+  if (tokenData && Number(tokenData.expiresAt) > currentTime) {
+    return tokenData.accessToken;
   }
 
   const response = await fetch('https://id.twitch.tv/oauth2/token', {
@@ -58,29 +66,29 @@ export const getBotAuthToken = async () => {
       client_id: config.twitch.clientId,
       client_secret: config.twitch.clientSecret,
       grant_type: 'refresh_token',
-      refresh_token: tokenData.refresh_token ?? null
+      refresh_token: tokenData.refreshToken ?? null
     })
   });
 
   const newTokenData = await response.json();
 
-  const expires_at = currentTime + newTokenData.expires_in * 1000;
-  await db.query(
-    'REPLACE INTO tokens (name, access_token, expires_at, refresh_token) VALUES (?, ?, ?, ?)',
-    ['bot-token', newTokenData.access_token, expires_at, newTokenData.refresh_token]
+  const expiresAt = currentTime + newTokenData.expires_in * 1000;
+  await bot.db.query(
+    'REPLACE INTO tokens (name, accessToken, expiresAt, refreshToken) VALUES (?, ?, ?, ?)',
+    ['bot-token', newTokenData.access_token, expiresAt, newTokenData.refresh_token]
   );
 
   return newTokenData.access_token;
 };
 
 export const getAppAuthToken = async () => {
-  const tokenData = await db.queryOne(
-    'SELECT access_token, expires_at FROM tokens WHERE name = ?',
+  const tokenData = await bot.db.queryOne(
+    'SELECT accessToken, expiresAt FROM tokens WHERE name = ?',
     ['app-token']
   );
 
-  if (tokenData && Number(tokenData.expires_at) > Date.now()) {
-    return tokenData.access_token;
+  if (tokenData && Number(tokenData.expiresAt) > Date.now()) {
+    return tokenData.accessToken;
   }
 
   const url = new URL('https://id.twitch.tv/oauth2/token');
@@ -95,12 +103,13 @@ export const getAppAuthToken = async () => {
   });
 
   const newTokenData = await response.json();
-  const expires_at = Date.now() + (newTokenData.expires_in * 1000);
+  const expiresAt = Date.now() + newTokenData.expires_in * 1000;
 
-  await db.query(
-    'REPLACE INTO tokens (name, access_token, expires_at) VALUES (?, ?, ?)',
-    ['app-token', newTokenData.access_token, expires_at]
-  );
+  await bot.db.query('REPLACE INTO tokens (name, accessToken, expiresAt) VALUES (?, ?, ?)', [
+    'app-token',
+    newTokenData.access_token,
+    expiresAt
+  ]);
 
   return newTokenData.access_token;
 };
@@ -110,13 +119,17 @@ export const getModeratingChannels = async () => {
   let cursor;
 
   do {
-    const response = await helix(`moderation/channels?user_id=${config.bot.userId}&after=${cursor || ''}&first=100`, 'GET', null, true);
+    const response = await helix(
+      `moderation/channels?user_id=${config.bot.userId}&first=100&after=${cursor || ''}`,
+      'GET',
+      null,
+      true
+    );
     cursor = response?.pagination?.cursor || null;
 
     for (const channel of response?.data || []) {
       channelIds.add(channel.broadcaster_id);
     }
-
   } while (cursor);
 
   return channelIds;
@@ -133,7 +146,9 @@ export const sendMessage = async (channelId, message, parent = '') => {
   try {
     const response = await helix('chat/messages', 'POST', body, true);
     if (response?.data?.[0]?.is_sent === false) {
-      bot.log.error(`Failed to send Message #${channelId}: ${message} - Reason: ${JSON.stringify(response.data[0].drop_reason)}`);
+      bot.log.error(
+        `failed to send Message #${channelId}: ${message} - Reason: ${JSON.stringify(response.data[0].drop_reason)}`
+      );
     }
 
     return response;
@@ -143,21 +158,5 @@ export const sendMessage = async (channelId, message, parent = '') => {
 };
 
 export const sendAction = async (channelId, message, parent = '') => {
-  const body = {
-    broadcaster_id: channelId,
-    sender_id: config.bot.userId,
-    message: `/me ${message}`,
-    reply_parent_message_id: parent
-  };
-
-  try {
-    const response = await helix('chat/messages', 'POST', body, true);
-    if (response?.data?.[0]?.is_sent === false) {
-      bot.log.error(`Failed to send Message #${channelId}: ${message} - Reason: ${JSON.stringify(response.data[0].drop_reason)}`);
-    }
-
-    return response;
-  } catch (e) {
-    bot.log.error(`Failed to send Message #${channelId}: ${message}`);
-  }
+  return await sendMessage(channelId, `/me ${message}`, parent);
 };

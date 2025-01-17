@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import * as subscriptions from '../utils/subscriptions.js';
-import { addShardsToConduit } from '../utils/api/conduits.js';
+import { addShardsToConduit } from './apis/conduits.js';
 
 export class ConduitShardClient {
   socket = null;
@@ -16,16 +16,16 @@ export class ConduitShardClient {
     this.socket = new WebSocket('wss://eventsub.wss.twitch.tv/ws');
 
     this.socket.addEventListener('open', () => {
-      bot.log.conduit('websocket: created connection to twitch');
+      bot.log.twitch('websocket: created connection to twitch');
     });
 
     this.socket.addEventListener('close', async (e) => {
-      bot.log.conduit('websocket: disconnected from twitch', e);
+      bot.log.twitch('websocket: disconnected from twitch', e);
       await this.reconnect();
     });
 
     this.socket.addEventListener('error', async (e) => {
-      bot.log.conduit('websocket: error occurred', e);
+      bot.log.twitch('websocket: error occurred', e);
       await this.reconnect();
     });
 
@@ -40,14 +40,14 @@ export class ConduitShardClient {
           }
 
           this.sessionId = newSessionId;
-          bot.log.conduit('websocket: received welcome message. session id:', this.sessionId);
+          bot.log.twitch('websocket: received welcome message. session id:', this.sessionId);
           resolve();
           return;
         }
 
         case 'session_reconnect': {
           const url = message.payload.session.reconnect_url;
-          bot.log.conduit('websocket: received reconnect message. reconnecting to:', url);
+          bot.log.twitch('websocket: received reconnect message. reconnecting to:', url);
           await this.socket.reconnect(url);
           return;
         }
@@ -57,7 +57,9 @@ export class ConduitShardClient {
           const subscriptionType = message?.metadata?.subscription_type ?? '';
           if (!subscriptionType || !event) return;
 
-          const subscription = Object.values(subscriptions).find(sub => sub.type === subscriptionType);
+          const subscription = Object.values(subscriptions).find(
+            (sub) => sub.type === subscriptionType
+          );
           if (!subscription || !subscription.handler) {
             return;
           }
@@ -69,16 +71,21 @@ export class ConduitShardClient {
   }
 
   async reconnect() {
-    this.createWebSocket(() => {
-      bot.log.conduit('websocket: reconnected to twitch');
-    }, (err) => {
-      bot.log.conduit('websocket: failed to reconnect', err);
-    });
+    this.createWebSocket(
+      () => {
+        bot.log.twitch('websocket: reconnected to twitch');
+      },
+      (err) => {
+        bot.log.twitch('websocket: failed to reconnect', err);
+      }
+    );
   }
 
   async reconnectWebSocket(newSessionId) {
     const conduitId = bot.conduitClient.conduitId;
-    bot.log.conduit(`reattached conduit-shard (new session id: ${newSessionId}) to conduit-id: ${conduitId}`);
+    bot.log.twitch(
+      `reattached conduit-shard (new session id: ${newSessionId}) to conduit-id: ${conduitId}`
+    );
 
     const newShard = {
       id: 0,
