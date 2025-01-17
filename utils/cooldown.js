@@ -1,24 +1,34 @@
-const cooldowns = new Map();
+export class Cooldown {
+  constructor() {
+    this.cooldownMap = new Map();
 
-export const duration = {
-  veryShort: 3,
-  short: 5,
-  medium: 15,
-  long: 30,
-  veryLong: 60
-};
+    this.veryShort = 3;
+    this.short = 5;
+    this.medium = 15;
+    this.long = 30;
+    this.veryLong = 60;
 
-export const set = (key, ttl) => {
-  clearTimeout(cooldowns.get(key));
-  const timeout = setTimeout(() => cooldowns.delete(key), ttl * 1000);
-  cooldowns.set(key, timeout);
-};
+    this.durations = {
+      veryShort: this.veryShort,
+      short: this.short,
+      medium: this.medium,
+      long: this.long,
+      veryLong: this.veryLong,
+    }
+  }
 
-export const remove = (key) => {
-  clearTimeout(cooldowns.get(key));
-  cooldowns.delete(key);
-};
+  set(key, ttl) {
+    clearTimeout(this.cooldownMap.get(key));
+    const timeout = setTimeout(() => this.cooldownMap.delete(key), ttl * 1000);
+    this.cooldownMap.set(key, timeout);
+  }
 
-export const has = (key) => {
-  return cooldowns.has(key);
-};
+  remove(key) {
+    clearTimeout(this.cooldownMap.get(key));
+    this.cooldownMap.delete(key);
+  }
+
+  has(key) {
+    return this.cooldownMap.has(key);
+  }
+}

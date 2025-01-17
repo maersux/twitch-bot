@@ -1,5 +1,4 @@
 import { getUserId } from '../utils/api/ivr.js';
-import { antiPing } from '../utils/utils.js';
 import { getModeratingChannels } from '../utils/api/helix.js';
 import config from '../config.js';
 
@@ -24,12 +23,12 @@ export default {
      switch (action) {
        case 'join': {
          if (bot.channels.has(channelId)) {
-           return response(`already joined channel ${antiPing(channel)}`);
+           return response(`already joined channel ${bot.utils.antiPing(channel)}`);
          }
 
          const moderatedChannels = await getModeratingChannels();
          if (!moderatedChannels.has(channelId)) {
-           return response(`i'm not modded in ${antiPing(channel)}. please add @${config.bot.username} as a moderator in this channel and retry`);
+           return response(`i'm not modded in ${bot.utils.antiPing(channel)}. please add @${config.bot.username} as a moderator in this channel and retry`);
          }
 
          await Promise.all([
@@ -38,12 +37,12 @@ export default {
            bot.channels.add(channelId)
          ]);
 
-         return response(`joined channel ${antiPing(channel)}`);
+         return response(`joined channel ${bot.utils.antiPing(channel)}`);
        }
 
        case 'part': {
          if (!bot.channels.has(channelId)) {
-           return response(`channel ${antiPing(channel)} is not joined`);
+           return response(`channel ${bot.utils.antiPing(channel)} is not joined`);
          }
 
          await Promise.all([
@@ -52,7 +51,7 @@ export default {
            bot.channels.delete(channelId)
          ]);
 
-         return response(`parted channel ${antiPing(channel)}`);
+         return response(`parted channel ${bot.utils.antiPing(channel)}`);
        }
 
        default: {

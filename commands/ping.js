@@ -1,17 +1,13 @@
-import { timeSince } from '../utils/utils.js';
-import { permissions } from '../utils/permissions.js';
-import { duration } from '../utils/cooldown.js';
-
 export default {
   name: 'ping',
   description: 'pong',
   aliases: ['pong'],
   access: bot.permissions.default,
-  cooldown: duration.veryShort,
+  cooldown: bot.cooldown.veryShort,
   async execute(msg, response) {
     const messages = [
       `🏓 ${msg.command.trigger === 'pong' ? 'PING' : 'PONG'}`,
-      `bot uptime: ${timeSince(bot.uptime)}`,
+      `bot uptime: ${bot.utils.timeSince(bot.uptime)}`,
       `channels: ${bot.channels.size}`
     ];
 

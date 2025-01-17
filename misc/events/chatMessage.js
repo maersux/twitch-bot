@@ -1,7 +1,5 @@
 import config from '../../config.js';
 import { sendAction, sendMessage } from '../../utils/api/helix.js';
-import * as cooldown from '../../utils/cooldown.js';
-import { duration } from '../../utils/cooldown.js';
 
 export const channelChatMessage = async (event) => {
   const channelDb = await db.queryOne(
@@ -53,7 +51,7 @@ export const channelChatMessage = async (event) => {
   };
 
   const cooldownKey = `${db.ns}:commands:${command.name}-${msg.user.id}`;
-  const hasCooldown = cooldown.has(cooldownKey);
+  const hasCooldown = bot.cooldown.has(cooldownKey);
   if (hasCooldown && msg.user.perms < bot.permissions.admin) return;
 
   if (bot.ignoredUsers.has(msg.user.id)) {
@@ -65,9 +63,9 @@ export const channelChatMessage = async (event) => {
     return msg.send(`you don't have the required permission to execute this command`, true);
   }
 
-  const commandCooldown = command.cooldown ?? duration.short;
+  const commandCooldown = command.cooldown ?? bot.cooldown.short;
   if (commandCooldown) {
-    cooldown.set(cooldownKey, commandCooldown);
+    bot.cooldown.set(cooldownKey, commandCooldown);
   }
 
   try {
@@ -75,7 +73,7 @@ export const channelChatMessage = async (event) => {
     const response = await command.execute(msg, responseFunction);
 
     if (response?.error) {
-      cooldown.remove(cooldownKey);
+      bot.cooldown.remove(cooldownKey);
     }
 
     if (response?.text) {

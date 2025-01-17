@@ -2,15 +2,21 @@ import * as fs from 'fs';
 import { Logger } from './Logger.js';
 import { ConduitClient } from './ConduitClient.js';
 import { Permissions } from '../utils/permissions.js';
+import { Utils } from '../utils/utils.js';
+import { Cooldown } from '../utils/cooldown.js';
 
 export class Bot {
   constructor() {
     this.log = new Logger();
     this.conduitClient = new ConduitClient();
     this.permissions = new Permissions();
+    this.utils = new Utils();
+    this.cooldown = new Cooldown();
+
     this.commands = new Map();
     this.channels = new Set();
     this.ignoredUsers = new Set();
+
     this.uptime = 0;
     this.commandsExecuted = 0;
   }
