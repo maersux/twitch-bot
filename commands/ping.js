@@ -6,7 +6,7 @@ export default {
   name: 'ping',
   description: 'pong',
   aliases: ['pong'],
-  access: permissions.default,
+  access: bot.permissions.default,
   cooldown: duration.veryShort,
   async execute(msg, response) {
     const messages = [

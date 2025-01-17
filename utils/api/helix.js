@@ -130,7 +130,16 @@ export const sendMessage = async (channelId, message, parent = '') => {
     reply_parent_message_id: parent
   };
 
-  return await helix('chat/messages', 'POST', body, true);
+  try {
+    const response = await helix('chat/messages', 'POST', body, true);
+    if (response?.data?.[0]?.is_sent === false) {
+      bot.log.error(`Failed to send Message #${channelId}: ${message} - Reason: ${JSON.stringify(response.data[0].drop_reason)}`);
+    }
+
+    return response;
+  } catch (e) {
+    bot.log.error(`Failed to send Message #${channelId}: ${message}`);
+  }
 };
 
 export const sendAction = async (channelId, message, parent = '') => {

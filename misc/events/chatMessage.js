@@ -1,5 +1,4 @@
 import config from '../../config.js';
-import { getUserPermission, permissions } from '../../utils/permissions.js';
 import { sendAction, sendMessage } from '../../utils/api/helix.js';
 import * as cooldown from '../../utils/cooldown.js';
 import { duration } from '../../utils/cooldown.js';
@@ -40,7 +39,7 @@ export const channelChatMessage = async (event) => {
       id: event.chatter_user_id,
       login: event.chatter_user_login,
       name: event.chatter_user_name,
-      perms: await getUserPermission(event.chatter_user_id, event.badges)
+      perms: bot.permissions.get(event.chatter_user_id, event.badges)
     },
 
     async send(message, reply = true) {
@@ -55,13 +54,13 @@ export const channelChatMessage = async (event) => {
 
   const cooldownKey = `${db.ns}:commands:${command.name}-${msg.user.id}`;
   const hasCooldown = cooldown.has(cooldownKey);
-  if (hasCooldown && msg.user.perms < permissions.admin) return;
+  if (hasCooldown && msg.user.perms < bot.permissions.admin) return;
 
   if (bot.ignoredUsers.has(msg.user.id)) {
     return msg.send(`you're on the ignore-list`, true);
   }
 
-  const access = command.access ?? permissions.default;
+  const access = command.access ?? bot.permissions.default;
   if (access > msg.user.perms) {
     return msg.send(`you don't have the required permission to execute this command`, true);
   }

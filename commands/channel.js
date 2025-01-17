@@ -1,4 +1,3 @@
-import { permissions } from '../utils/permissions.js';
 import { getUserId } from '../utils/api/ivr.js';
 import { antiPing } from '../utils/utils.js';
 import { getModeratingChannels } from '../utils/api/helix.js';
@@ -7,11 +6,11 @@ import config from '../config.js';
 export default {
   name: 'channel',
   description: 'join or part a channel',
-  access: permissions.admin,
-  usage: 'join or part a channel',
+  access: bot.permissions.admin,
+  usage: '<join|part> <channel>',
   async execute(msg, response) {
     if (msg.args.length < 2) {
-      return response(`usage: ${this.usage}`, { error: true });
+      return response(`usage: ${msg.prefix}${msg.command.trigger} ${this.usage}`, { error: true });
     }
 
     const action = msg.args[0].toLowerCase();
