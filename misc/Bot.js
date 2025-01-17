@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { Logger } from './Logger.js';
 import { ConduitClient } from './ConduitClient.js';
-import Permissions from '../utils/permissions.js';
+import { Permissions } from '../utils/permissions.js';
 
 export class Bot {
   constructor() {
