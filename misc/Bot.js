@@ -1,11 +1,13 @@
 import * as fs from 'fs';
 import { Logger } from './Logger.js';
 import { ConduitClient } from './ConduitClient.js';
+import { Permissions } from '../utils/permissions.js';
 
 export class Bot {
   constructor() {
     this.log = new Logger();
     this.conduitClient = new ConduitClient();
+    this.permissions = new Permissions();
     this.commands = new Map();
     this.channels = new Set();
     this.ignoredUsers = new Set();
@@ -19,7 +21,8 @@ export class Bot {
     const [ignoredUsers, channels] = await Promise.all([
       db.query(`SELECT user_id FROM ignored_users`),
       db.query(`SELECT user_id FROM channels`),
-      this.loadCommands()
+      this.loadCommands(),
+      this.permissions.initialize()
     ]);
 
     this.ignoredUsers = new Set(ignoredUsers.map(user => user.user_id));
