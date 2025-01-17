@@ -2,11 +2,11 @@ import config from '../../config.js';
 import { sendAction, sendMessage } from '../apis/helix.js';
 
 export const channelChatMessage = async (event) => {
-  const channelDb = await bot.db.queryOne('SELECT prefix FROM channels WHERE userId=?', [
-    event.broadcaster_user_id
-  ]);
+  const channel = bot.channels.get(event.broadcaster_user_id);
 
-  const prefix = channelDb.prefix || config.bot.prefix;
+  const prefix = channel.prefix || config.bot.prefix;
+
+  bot.db.query(`INSERT INTO users (userId, username) VALUES (?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username)`, [event.chatter_user_id, event.chatter_user_login]);
 
   if (!event.message.text.startsWith(prefix)) return;
   if (event.chatter_user_id === config.bot.userId) return;

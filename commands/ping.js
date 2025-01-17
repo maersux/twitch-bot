@@ -8,7 +8,7 @@ export default {
     const messages = [
       `🏓 ${msg.command.trigger === 'pong' ? 'PING' : 'PONG'}`,
       `bot uptime: ${bot.utils.timeSince(bot.stats.runningSince)}`,
-      `channels: ${bot.channels.size}`,
+      `channels: ${bot.channels.getAll().length}`,
       `commands executed: ${bot.utils.formatNumber(bot.stats.commandsExecuted)}`
     ];
 

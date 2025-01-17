@@ -7,6 +7,7 @@ import { Logger } from './utils/Logger.js';
 import { Permissions } from './utils/permissions.js';
 import { Utils } from './utils/utils.js';
 import { Stats } from './utils/Stats.js';
+import { Channels } from './utils/Channels.js';
 
 export class Bot {
   constructor() {
@@ -23,25 +24,24 @@ export class Bot {
     this.cooldown = new Cooldown();
 
     this.commands = new Map();
-    this.channels = new Set();
+    this.channels = new Channels();
   }
 
   async initialize() {
-    const [channels] = await Promise.all([
-      bot.db.query(`SELECT userId FROM channels`),
-      this.loadCommands()
+    await Promise.all([
+      this.channels.initialize(),
+      this.loadCommands(),
+      this.permissions.initialize(),
+      this.conduitClient.initialize(),
+      this.stats.runningSince = Date.now()
     ]);
-
-    this.channels = new Set(channels.map((channel) => channel.userId));
-
-    await Promise.all([this.permissions.initialize(), this.conduitClient.initialize()]);
   }
 
   async loadCommands() {
     const commandFiles = fs.readdirSync(`./commands`).filter((file) => file.endsWith('.js'));
 
     for (const file of commandFiles) {
-      const command = await import(`../commands/${file}?${Date.now()}`);
+      const command = await import(`./commands/${file}?${Date.now()}`);
 
       if (!command?.default?.name) {
         this.log.error(`failed to load Command ${file}`);
