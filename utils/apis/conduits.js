@@ -89,6 +89,6 @@ export const deleteSubscription = async (subscriptionId) => {
   const endpoint = `eventsub/subscriptions?id=${subscriptionId}`;
   await Promise.all([
     helix(endpoint, 'DELETE'),
-    bot.db.query('DELETE FROM subscriptions WHERE id =  ?', [subscriptionId])
+    bot.db.query('DELETE FROM subscriptions WHERE id = ?', [subscriptionId])
   ]);
 };
