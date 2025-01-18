@@ -32,7 +32,7 @@ export class Channels {
     const channel = this.get(userId);
 
     channel[setting] = value;
-    await bot.db.query(`UPDATE channels SET ${setting} = ? WHERE userId = ?`, [setting, userId]);
+    await bot.db.query(`UPDATE channels SET ${setting} = ? WHERE userId = ?`, [value, userId]);
   }
 
   async join(userId, login, prefix = config.bot.prefix) {
