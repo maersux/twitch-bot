@@ -41,7 +41,7 @@ export class ConduitClient {
 
     await Promise.all([
       this.subscribeToEvents([config.bot.userId]),
-      this.subscribeToEvents(bot.channels)
+      this.subscribeToEvents(bot.channels.getAll())
     ]);
   }
 
@@ -54,8 +54,8 @@ export class ConduitClient {
         condition: JSON.parse(conditionStr)
       };
 
-      const subscriptionExists = await db.entryExists(
-        'SELECT id FROM subscriptions WHERE type=? AND version=? AND channel_id=?',
+      const subscriptionExists = await bot.db.entryExists(
+        'SELECT id FROM subscriptions WHERE type = ? AND version = ? AND channelId = ?',
         [topic.type, topic.version, channelId]
       );
       if (subscriptionExists) {
@@ -65,8 +65,8 @@ export class ConduitClient {
       await bot.utils.sleep(250);
       const subscriptionResponse = await createSubscription(subscriptionSettings);
       if (subscriptionResponse?.id) {
-        await db.query(
-          'INSERT INTO subscriptions (id, type, version, channel_id) VALUES (?, ?, ?, ?)',
+        await bot.db.query(
+          'INSERT INTO subscriptions (id, type, version, channelId) VALUES (?, ?, ?, ?)',
           [subscriptionResponse.id, topic.type, topic.version, channelId]
         );
       }
@@ -75,13 +75,13 @@ export class ConduitClient {
 
   async removeSubscriptions(channelId, subscriptionTopics) {
     for (const topic of subscriptionTopics) {
-      const subscription = await db.queryOne(
-        'SELECT id FROM subscriptions WHERE channel_id = ? AND type = ?',
+      const subscription = await bot.db.queryOne(
+        'SELECT id FROM subscriptions WHERE channelId = ? AND type = ?',
         [channelId, topic.type]
       );
       if (subscription) {
         await deleteSubscription(subscription.id);
-        await db.query('DELETE FROM subscriptions WHERE id=?', [subscription.id]);
+        await bot.db.query('DELETE FROM subscriptions WHERE id = ?', [subscription.id]);
       }
     }
   }

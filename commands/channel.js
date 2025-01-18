@@ -32,15 +32,7 @@ export default {
           );
         }
 
-        await Promise.all([
-          bot.conduitClient.subscribeToEvents([channelId]),
-          bot.db.query(`INSERT INTO channels (userId, login, prefix) VALUES (?, ?, ?)`, [
-            channelId,
-            channel,
-            config.bot.prefix
-          ]),
-          bot.channels.add(channelId)
-        ]);
+        await bot.channels.join(channelId, channel);
 
         return response(`joined channel ${bot.utils.antiPing(channel)}`);
       }
@@ -50,11 +42,7 @@ export default {
           return response(`channel ${bot.utils.antiPing(channel)} is not joined`);
         }
 
-        await Promise.all([
-          bot.conduitClient.unsubscribeFromEvents([channelId]),
-          bot.db.query(`DELETE FROM channels WHERE userId = ?`, [channelId]),
-          bot.channels.delete(channelId)
-        ]);
+        await bot.channels.part(channelId);
 
         return response(`parted channel ${bot.utils.antiPing(channel)}`);
       }

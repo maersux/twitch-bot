@@ -1,7 +1,7 @@
 export class Stats {
   constructor() {
     this.commandsExecuted = 0;
-    this.runningSince = bot.utils.now();
+    this.runningSince = null;
   }
 
   async commandExecuted(command = '') {

@@ -12,7 +12,7 @@ export const helix = async (endpoint, method = 'GET', body = {}, useBotAuth = fa
       Authorization: `Bearer ${auth}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(body)
+    body: (method === "POST" || method === "PATCH") ? JSON.stringify(body) : null,
   };
 
   try {

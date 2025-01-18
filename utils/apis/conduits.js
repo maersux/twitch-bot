@@ -8,7 +8,7 @@ export const getConduitId = async () => {
   }
 
   const conduit = await createConduit();
-  await db.query('INSERT INTO conduits (id) VALUES (?)', [conduit.id]);
+  await bot.db.query('INSERT INTO conduits (id) VALUES (?)', [conduit.id]);
 
   return conduit.id;
 };
@@ -89,6 +89,6 @@ export const deleteSubscription = async (subscriptionId) => {
   const endpoint = `eventsub/subscriptions?id=${subscriptionId}`;
   await Promise.all([
     helix(endpoint, 'DELETE'),
-    bot.db.query('DELETE FROM subscriptions WHERE id=?', [subscriptionId])
+    bot.db.query('DELETE FROM subscriptions WHERE id =  ?', [subscriptionId])
   ]);
 };
