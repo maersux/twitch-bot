@@ -1,6 +1,5 @@
 import WebSocket from 'ws';
 import * as subscriptions from '../utils/subscriptions.js';
-import { addShardsToConduit } from './apis/conduits.js';
 
 export class ConduitShardClient {
   socket = null;
@@ -48,8 +47,12 @@ export class ConduitShardClient {
         case 'session_reconnect': {
           const url = message.payload.session.reconnect_url;
           bot.log.twitch('websocket: received reconnect message. reconnecting to:', url);
-          await this.socket.reconnect(url);
+          await this.reconnect(url);
           return;
+        }
+
+        case 'revocation': {
+            return bot.db.query(`DELETE FROM subscriptions WHERE id = ?`, [message.payload.subscription.id]);
         }
 
         default: {
@@ -95,6 +98,6 @@ export class ConduitShardClient {
       }
     };
 
-    await addShardsToConduit(conduitId, [newShard]);
+    await bot.api.conduits.addShardsToConduit(conduitId, [newShard]);
   }
 }

@@ -1,5 +1,3 @@
-import * as conduits from '../utils/apis/conduits.js'
-
 export default {
   name: 'eval',
   description: 'evaluates a given js code',

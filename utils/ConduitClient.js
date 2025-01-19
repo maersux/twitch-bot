@@ -1,11 +1,5 @@
 import { ConduitShardClient } from './ConduitShardClient.js';
 import * as subscriptions from './subscriptions.js';
-import {
-  addShardsToConduit,
-  createSubscription,
-  deleteSubscription,
-  getConduitId
-} from './apis/conduits.js';
 import config from '../config.js';
 
 export class ConduitClient {
@@ -23,7 +17,7 @@ export class ConduitClient {
   }
 
   async initialize() {
-    this.conduitId = await getConduitId();
+    this.conduitId = await bot.api.conduits.getConduitId();
     bot.log.twitch('twitch-id: ', this.conduitId);
 
     await this.shard.initialize();
@@ -37,7 +31,7 @@ export class ConduitClient {
       }
     };
 
-    await addShardsToConduit(this.conduitId, [shard]);
+    await bot.api.conduits.addShardsToConduit(this.conduitId, [shard]);
 
     await Promise.all([
       this.subscribeToEvents([config.bot.userId]),
@@ -62,8 +56,7 @@ export class ConduitClient {
         continue;
       }
 
-      await bot.utils.sleep(250);
-      const subscriptionResponse = await createSubscription(subscriptionSettings);
+      const subscriptionResponse = await bot.api.conduits.createSubscription(subscriptionSettings);
       if (subscriptionResponse?.id) {
         await bot.db.query(
           'INSERT INTO subscriptions (id, type, version, channelId) VALUES (?, ?, ?, ?)',
@@ -80,7 +73,7 @@ export class ConduitClient {
         [channelId, topic.type]
       );
       if (subscription) {
-        await deleteSubscription(subscription.id);
+        await bot.api.conduits.deleteSubscription(subscription.id);
         await bot.db.query('DELETE FROM subscriptions WHERE id = ?', [subscription.id]);
       }
     }
