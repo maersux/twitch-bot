@@ -1,5 +1,4 @@
 import config from '../../config.js';
-import { sendAction, sendMessage } from '../apis/helix.js';
 
 export const channelChatMessage = async (event) => {
   const channel = bot.channels.get(event.broadcaster_user_id);
@@ -41,11 +40,11 @@ export const channelChatMessage = async (event) => {
 
     async send(message, reply = true) {
       const parent = reply ? event.message_id : '';
-      await sendMessage(event.broadcaster_user_id, message, parent);
+      await bot.api.helix.sendMessage(event.broadcaster_user_id, message, parent);
     },
 
     async sendAction(message) {
-      await sendAction(event.broadcaster_user_id, message);
+      await bot.api.helix.sendAction(event.broadcaster_user_id, message);
     }
   };
 
@@ -86,12 +85,12 @@ export const channelChatMessage = async (event) => {
 
     if (response?.text) {
       const parent = response?.reply ? event.message_id : '';
-      await sendMessage(event.broadcaster_user_id, response.text, parent);
+      await bot.api.helix.sendMessage(event.broadcaster_user_id, response.text, parent);
     }
 
     await bot.stats.commandExecuted(msg.command.trigger);
   } catch (e) {
     const parent = event.message_id;
-    await sendMessage(event.broadcaster_user_id, `FeelsDankMan ${e}`, parent);
+    await bot.api.helix.sendMessage(event.broadcaster_user_id, `FeelsDankMan ${e}`, parent);
   }
 };

@@ -1,6 +1,5 @@
 import WebSocket from 'ws';
 import * as subscriptions from '../utils/subscriptions.js';
-import { addShardsToConduit } from './apis/conduits.js';
 
 export class ConduitShardClient {
   socket = null;
@@ -99,6 +98,6 @@ export class ConduitShardClient {
       }
     };
 
-    await addShardsToConduit(conduitId, [newShard]);
+    await bot.api.conduits.addShardsToConduit(conduitId, [newShard]);
   }
 }

@@ -1,4 +1,3 @@
-import { getModeratingChannels } from '../utils/apis/helix.js';
 import config from '../config.js';
 
 export default {
@@ -25,7 +24,7 @@ export default {
           return response(`already joined channel ${bot.utils.antiPing(channel)}`);
         }
 
-        const moderatedChannels = await getModeratingChannels();
+        const moderatedChannels = await bot.api.helix.getModeratingChannels();
         if (!moderatedChannels.has(channelId)) {
           return response(
             `i'm not modded in ${bot.utils.antiPing(channel)}. please add @${config.bot.username} as a moderator in this channel and retry`

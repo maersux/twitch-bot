@@ -1,5 +1,7 @@
 import { Ivr } from './apis/Ivr.js';
 import config from '../config.js';
+import { Helix } from './apis/Helix.js';
+import { Conduits } from './apis/Conduits.js';
 
 export class Api {
   constructor() {
@@ -7,6 +9,8 @@ export class Api {
     this.userAgent = `twitch bot by ${config.owner.username}`;
 
     this.ivr = new Ivr();
+    this.helix = new Helix();
+    this.conduits = new Conduits();
   }
 
   async fetch(url, options = {}, responseType = 'json') {
