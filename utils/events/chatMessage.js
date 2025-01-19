@@ -5,7 +5,10 @@ export const channelChatMessage = async (event) => {
 
   const prefix = channel.prefix || config.bot.prefix;
 
-  bot.db.query(`INSERT INTO users (userId, username) VALUES (?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username)`, [event.chatter_user_id, event.chatter_user_login]);
+  bot.db.query(
+    `INSERT INTO users (userId, username) VALUES (?, ?) ON DUPLICATE KEY UPDATE username = VALUES(username)`,
+    [event.chatter_user_id, event.chatter_user_login]
+  );
 
   if (!event.message.text.startsWith(prefix)) return;
   if (event.chatter_user_id === config.bot.userId) return;
@@ -58,7 +61,7 @@ export const channelChatMessage = async (event) => {
       return;
     }
 
-    return msg.send(`you're on the ignore-list`, true);
+    return msg.send(`you're being ignored`, true);
   }
 
   const access = command.access ?? bot.permissions.default;

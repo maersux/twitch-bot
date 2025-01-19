@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import { readdirSync } from 'fs';
 import { Api } from './utils/Api.js';
 import { ConduitClient } from './utils/ConduitClient.js';
 import { Cooldown } from './utils/cooldown.js';
@@ -29,16 +29,15 @@ export class Bot {
 
   async initialize() {
     await Promise.all([
-      this.channels.initialize(),
       this.loadCommands(),
+      this.channels.initialize(),
       this.permissions.initialize(),
-      this.conduitClient.initialize(),
-      this.stats.runningSince = Date.now()
+      this.conduitClient.initialize()
     ]);
   }
 
   async loadCommands() {
-    const commandFiles = fs.readdirSync(`./commands`).filter((file) => file.endsWith('.js'));
+    const commandFiles = readdirSync(`./commands`).filter((file) => file.endsWith('.js'));
 
     for (const file of commandFiles) {
       const command = await import(`./commands/${file}?${Date.now()}`);
