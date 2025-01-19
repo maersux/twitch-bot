@@ -5,13 +5,16 @@ export default {
   access: bot.permissions.mod,
   cooldown: bot.cooldown.veryShort,
   async execute(msg, response) {
-    const prefix = msg.args[0];
     if (!msg.args.length) {
       return response(`usage: ${msg.prefix}${msg.command.trigger} ${this.usage}`, { error: true });
     }
 
+    const prefix = msg.args[0];
+
     if (prefix.length > 15) {
-      return response('FeelsDankMan This prefix is too long, the maximum length is 15 characters', { error: true});
+      return response('FeelsDankMan This prefix is too long, the maximum length is 15 characters', {
+        error: true
+      });
     }
 
     if (msg.prefix === prefix) {
@@ -19,8 +22,11 @@ export default {
     }
 
     const reservedSymbols = ['.', '/'];
-    if (reservedSymbols.some(reservedSymbol => prefix.startsWith(reservedSymbol))) {
-      return response(`FeelsDankMan didn't update prefix, because it starts with a reserved symbol by twitch`, { error: true });
+    if (reservedSymbols.some((reservedSymbol) => prefix.startsWith(reservedSymbol))) {
+      return response(
+        `FeelsDankMan didn't update prefix because it starts with a twitch reserved symbol`,
+        { error: true }
+      );
     }
 
     await bot.channels.update(msg.channel.id, `prefix`, prefix);

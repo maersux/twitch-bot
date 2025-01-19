@@ -11,7 +11,7 @@ export default {
     }
 
     const action = msg.args[0].toLowerCase();
-    const channel = msg.args[1].toLowerCase().replace(/[#@,]/g, '');
+    const channel = bot.utils.sanitizeUser(msg.args[1]);
 
     const channelId = await bot.api.ivr.getUserId(channel);
     if (!channelId) {

@@ -6,10 +6,12 @@ export default {
   cooldown: bot.cooldown.short,
   usage: '<status | default | admin> <user>',
   async execute(msg, response) {
-    if (!msg.args.length) return response(`usage: ${this.usage}`, { error: true });
+    if (!msg.args.length) {
+      return response(`usage: ${this.usage}`, { error: true });
+    }
 
     const permission = msg.args[0].toLowerCase();
-    const user = msg.args[1]?.toLowerCase()?.replace(/[#@,]/g, '') || msg.user.login;
+    const user = bot.utils.sanitizeUser(msg.args[1], msg.user.login);
 
     const userId = await bot.api.ivr.getUserId(user);
     if (!userId) {

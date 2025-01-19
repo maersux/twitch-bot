@@ -32,7 +32,16 @@ export class Utils {
     return this.joinMessage(parts, ' ');
   }
 
-  antiPing(text = ``) {
+  sanitizeUser(username = '', fallback = '') {
+    if (!username) return fallback;
+
+    return username
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/gi, '')
+      .replace(/^_+/, '');
+  }
+
+  antiPing(text = '') {
     const [start = '', ...rest] = text;
     const end = rest.pop() || '';
 
@@ -40,7 +49,7 @@ export class Utils {
   }
 
   formatNumber(number = 0) {
-    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return number?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') || 0;
   }
 
   pluralize(word, length, appendix = 's') {
