@@ -74,7 +74,7 @@ Note: You can set expires_at to 0 initially.
 Start the Bot
 
 ```bash
-  npm run start
+npm run start
 ```
 
 The bot will automatically connect to Twitch and listen for chat events.
@@ -83,12 +83,11 @@ The bot will automatically connect to Twitch and listen for chat events.
 ## Default Commands
 
 
-
-Default Prefix is - and can be changed in the config.js
+Default prefix is - and can be changed in the config.js
 
 | Command | Description     | Permission                |
 | :-------- | :------- | :------------------------- |
-| -ping | Pong | Everyone |
+| -ping | pong | Everyone |
 | -setprefix | set the prefix in a channel | Mod |
 | -permission | get/update a users permission | Everyone |
 | -channel | join or part a channel | Admin |
@@ -97,13 +96,15 @@ Default Prefix is - and can be changed in the config.js
 
 ## 🤝 Contributing
 
+Got an idea, found a bug, or want to add a new feature? Contributions are always welcome!
 
-Contributions, bug reports, and feature requests are welcome:
+### How to contribute:
 
-Open an issue
+- 🔧 Fork the repo
+- 🌿 Create a feature branch
+- 📝 Make your changes and commit
+- ✅ Submit a pull request
 
-Fork the repository
 
-Create a feature branch
-
+Thanks for helping make this bot template better
 
