@@ -57,9 +57,10 @@ Copy the code parameter from the URL.
 
 - Execute the following cURL request (replace placeholders):
 
-```curl -X POST 'https://id.twitch.tv/oauth2/token'
+```
+curl -X POST 'https://id.twitch.tv/oauth2/token'
 -H 'Content-Type: application/x-www-form-urlencoded'
--d 'client_id=<CLIENT_ID>&client_secret=<CLIENT_SECRET>&code=<CODE_FROM_BEFORE>&grant_type=authorization_code&redirect_uri=http://localhost:8888'
+-d 'client_id=<CLIENT_ID>&client_secret=<CLIENT_SECRET>&code<CODE_FROM_BEFORE>&grant_type=authorization_code&redirect_uri=http://localhost:8888'
 ```
 
 The response will include access_token, refresh_token, and expires_in.
