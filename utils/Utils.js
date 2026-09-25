@@ -23,13 +23,13 @@ export class Utils {
     const days = Math.floor(duration / (1000 * 60 * 60 * 24));
 
     const parts = [
-      days > 0 ? this.pluralize('day', days) : null,
-      hours > 0 ? this.pluralize('hour', hours) : null,
-      minutes > 0 ? this.pluralize('minute', minutes) : null,
-      seconds > 0 ? this.pluralize('second', seconds) : null
+      days > 0 ? `${days} ${this.pluralize('day', days)}` : null,
+      hours > 0 ? `${hours} ${this.pluralize('hour', hours)}` : null,
+      minutes > 0 ? `${minutes} ${this.pluralize('minute', minutes)}` : null,
+      seconds > 0 ? `${seconds} ${this.pluralize('second', seconds)}` : null
     ];
 
-    return this.joinMessage(parts, ' ');
+    return this.joinMessage(parts, ' ') || '0 seconds';
   }
 
   sanitizeUser(username = '', fallback = '') {
@@ -58,6 +58,29 @@ export class Utils {
 
   joinMessage(messages, separator = ` | `) {
     return messages.filter(Boolean).join(separator);
+  }
+
+  splitMessage(text, limit = 500, maxParts = 3) {
+    const chars = [...text.replace(/\s+/g, ' ').trim()];
+    const parts = [];
+
+    while (chars.length && parts.length < maxParts) {
+      if (chars.length <= limit) {
+        parts.push(chars.splice(0).join(''));
+        break;
+      }
+
+      const lastSpace = chars.lastIndexOf(' ', limit);
+      const cut = lastSpace > limit / 2 ? lastSpace : limit;
+      parts.push(chars.splice(0, cut).join('').trim());
+    }
+
+    if (chars.length) {
+      const last = [...parts.pop()];
+      parts.push(last.slice(0, limit - 1).join('') + '…');
+    }
+
+    return parts;
   }
 
   async sleep(ms = 200) {

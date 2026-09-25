@@ -3,26 +3,21 @@ export default {
   description: 'evaluates a given js code',
   access: bot.permissions.dev,
   usage: '<code>',
-  async execute(msg, response) {
+  async execute(msg) {
     if (!msg.args.length) {
-      return response(`usage: ${msg.prefix}${msg.command.trigger} ${this.usage}`);
+      return bot.commands.usage(msg, this);
     }
 
     try {
       const result = await eval(`(async () => {
-				${msg.text}
-			})()`);
+        ${msg.text}
+      })()`);
 
-      if (result !== undefined) {
-        if (typeof result === 'object') {
-          return response(JSON.stringify(result));
-        }
+      if (result === undefined) return;
 
-        return response(String(result));
-      }
+      return typeof result === 'object' ? JSON.stringify(result) : String(result);
     } catch (e) {
-      bot.log.error(e);
-      return response(`FeelsDankMan error ${e}`);
+      return { error: `FeelsDankMan error ${e}` };
     }
   }
 };

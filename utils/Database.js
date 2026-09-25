@@ -4,37 +4,40 @@ import config from '../config.js';
 export class Database {
   constructor() {
     this.pool = createPool({
+      host: config.db.host,
+      port: config.db.port,
       user: config.db.user,
       password: config.db.pass,
       database: config.db.name,
-      host: config.db.host
+      connectionLimit: 5,
+      bigIntAsNumber: true,
+      insertIdAsNumber: true
     });
-    this.ns = 'tb';
   }
 
-  async query(queryParam, params = []) {
-    let connection;
-    let result;
-
+  async query(query, params = []) {
     try {
-      connection = await this.pool.getConnection();
-      result = await connection.query(queryParam, params);
-    } catch (e) {
-      bot.log.error(e);
-    } finally {
-      connection?.release();
+      return await this.pool.query(query, params);
+    } catch (error) {
+      bot.log.error(`database query failed: ${query}`, error.message);
+      throw error;
     }
-
-    return result || [];
   }
 
-  async queryOne(queryStr, params = [], addLimit = true) {
-    const result = await this.query(`${queryStr}${addLimit ? ' LIMIT 1' : ''}`, params);
-    return result?.[0] || false;
+  async tryQuery(query, params = [], fallback = []) {
+    try {
+      return await this.query(query, params);
+    } catch {
+      return fallback;
+    }
   }
 
-  async entryExists(queryStr, params = [], addLimit = true) {
-    const rows = await this.query(`${queryStr}${addLimit ? ' LIMIT 1' : ''}`, params);
-    return rows.length > 0;
+  async queryOne(query, params = []) {
+    const rows = await this.query(`${query} LIMIT 1`, params);
+    return rows[0] ?? null;
+  }
+
+  async teardown() {
+    await this.pool.end();
   }
 }

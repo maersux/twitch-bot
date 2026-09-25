@@ -1,5 +1,4 @@
 export class Logger {
-  // https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit
   #logMessage(type, color, ...args) {
     const formattedDate = new Date().toLocaleString('de-DE', {
       day: '2-digit',
@@ -18,21 +17,21 @@ export class Logger {
 
   msg(...args) {
     this.#logMessage('LOG', '34', ...args);
-  };
+  }
 
   info(...args) {
     this.#logMessage('INF', '32', ...args);
-  };
+  }
 
   warn(...args) {
     this.#logMessage('WRN', '33', ...args);
-  };
+  }
 
   error(...args) {
     this.#logMessage('ERR', '31', ...args);
-  };
+  }
 
   twitch(...args) {
-    this.#logMessage('TTV', '95', ...args)
+    this.#logMessage('TTV', '95', ...args);
   }
 }

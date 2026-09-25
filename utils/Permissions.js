@@ -41,7 +41,13 @@ export class Permissions {
   }
 
   get(userId, badges = []) {
-    const userPermissions = [this.permissionMap.get(userId) || this.default];
+    if (userId === config.owner.userId) return this.owner;
+
+    const stored = this.permissionMap.get(userId) ?? this.default;
+
+    if (stored <= this.ignored) return stored;
+
+    const userPermissions = [stored];
 
     for (const badge of badges || []) {
       if (badge.set_id === 'vip') userPermissions.push(this.vip);
@@ -49,8 +55,14 @@ export class Permissions {
       if (badge.set_id === 'broadcaster') userPermissions.push(this.broadcaster);
     }
 
-    if (userId === config.owner.userId) userPermissions.push(this.owner);
-
     return Math.max(...userPermissions);
+  }
+
+  name(level) {
+    return Object.keys(this.list).find((key) => this.list[key] === level) ?? null;
+  }
+
+  level(name) {
+    return Object.hasOwn(this.list, name) ? this.list[name] : undefined;
   }
 }

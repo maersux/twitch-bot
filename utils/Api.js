@@ -1,46 +1,74 @@
-import { Ivr } from './apis/Ivr.js';
 import config from '../config.js';
 import { Helix } from './apis/Helix.js';
-import { Conduits } from './apis/Conduits.js';
 
 export class Api {
   constructor() {
-    // if you have a GitHub repo, do something like ${config.owner.username} (link to your repo)
     this.userAgent = `twitch bot by ${config.owner.username}`;
+    this.timeout = 10_000;
 
-    this.ivr = new Ivr();
     this.helix = new Helix();
-    this.conduits = new Conduits();
+
+    this.userCache = new Map();
+    this.userCacheTtl = 10 * 60 * 1000;
+    this.userCacheLimit = 5000;
   }
 
-  async fetch(url, options = {}, responseType = 'json') {
+  async fetch(url, { headers = {}, silent = false, responseType = 'json', ...options } = {}) {
     try {
       const response = await fetch(url, {
         method: 'GET',
+        signal: AbortSignal.timeout(this.timeout),
+        ...options,
         headers: {
-          'User-Agent': this.userAgent
-        },
-        ...options
+          'User-Agent': this.userAgent,
+          ...headers
+        }
       });
 
-      if (!response.ok) {
-        bot.log.error(`error in ${url} (${response.status}) - ${response.statusText}`);
-        return null;
+      const text = await response.text();
+      let body = text || null;
+
+      if (text && responseType === 'json') {
+        try {
+          body = JSON.parse(text);
+        } catch {}
       }
 
-      if (response.status === 204) {
-        return null;
+      if (!response.ok && !silent) {
+        bot.log.error(`error in ${url} (${response.status}): ${text || response.statusText}`);
       }
 
-      switch (responseType) {
-        case 'text':
-          return await response.text();
-        default:
-          return await response.json();
-      }
+      return { ok: response.ok, status: response.status, body };
     } catch (error) {
-      bot.log.error(`network error in ${url}: ${error.message}`);
-      return null;
+      if (!silent) {
+        bot.log.error(`network error in ${url}: ${error.message}`);
+      }
+
+      return { ok: false, status: 0, body: null };
     }
+  }
+
+  async getUser(login) {
+    login = login?.toLowerCase();
+    if (!login) return null;
+
+    const cached = this.userCache.get(login);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.user;
+    }
+
+    const user = await this.helix.getUserByLogin(login);
+    if (!user) return null;
+
+    if (this.userCache.size >= this.userCacheLimit) {
+      this.userCache.clear();
+    }
+
+    this.userCache.set(login, { user, expiresAt: Date.now() + this.userCacheTtl });
+    return user;
+  }
+
+  async getUserId(login) {
+    return (await this.getUser(login))?.id ?? null;
   }
 }

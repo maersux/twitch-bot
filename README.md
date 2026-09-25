@@ -1,8 +1,6 @@
 ## Twitch Bot - Modular Twitch Chat Bot
 
- 
-
-A modern, extensible Twitch chat bot built with Node.js, leveraging Conduit WebSockets and the Twitch API.
+A modern, extensible Twitch chat bot built with Node.js, leveraging EventSub conduits and the Twitch API.
 
 ## 🌟 Features
 
@@ -14,10 +12,13 @@ A modern, extensible Twitch chat bot built with Node.js, leveraging Conduit WebS
 
 - Database Support: MariaDB/MySQL integration for data persistence.
 
-- Comprehensive Logging: Structured logging of errors and events.
+- Reliable EventSub: Conduit + websocket shard with automatic reconnects and keepalive checks.
 
+- Chat Bot Badge: Messages are sent with an app access token.
 
 ## ⚙️ Installation
+
+Requirements: Node.js 20.12 or newer and a MariaDB/MySQL database.
 
 Clone the repository:
 
@@ -32,43 +33,54 @@ Install dependencies:
 npm install
 ```
 
-    
-## 🔓 Generating OAuth Tokens
+Create the database tables from `db-schema.sql`, then copy `.env.example` to `.env` and fill it in.
 
-To connect the bot to Twitch, you need an access and refresh token:
+## 🔓 Authorizing the Bot Account
 
- - Register a Twitch Application
+- Register a Twitch Application
 
-```Go to https://dev.twitch.tv/console/apps```
-
-Create a new application with Redirect URI ```http://localhost:8888``` and type ```confidential```.
+Go to https://dev.twitch.tv/console/apps and create a new application with the OAuth Redirect URL `http://localhost:8888` and client type `Confidential`.
 
 Save the Client ID and Client Secret in your .env file.
 
-- Request an Authorization Code
+- Run the auth script
 
-Open this URL in your browser (logged in with the bot account):
-
-```https://id.twitch.tv/oauth2/authorize?client_id=<CLIENT_ID>&redirect_uri=http://localhost:8888&response_type=code&scope=analytics:read:extensions+analytics:read:games+bits:read+channel:manage:ads+channel:read:ads+channel:manage:broadcast+channel:read:charity+channel:edit:commercial+channel:read:editors+channel:manage:extensions+channel:read:goals+channel:read:guest_star+channel:manage:guest_star+channel:read:hype_train+channel:manage:moderators+channel:read:polls+channel:manage:polls+channel:read:predictions+channel:manage:predictions+channel:manage:raids+channel:read:redemptions+channel:manage:redemptions+channel:manage:schedule+channel:read:stream_key+channel:read:subscriptions+channel:manage:videos+channel:read:vips+channel:manage:vips+clips:edit+moderation:read+moderator:manage:announcements+moderator:manage:automod+moderator:read:automod_settings+moderator:manage:automod_settings+moderator:manage:banned_users+moderator:read:blocked_terms+moderator:manage:blocked_terms+moderator:manage:chat_messages+moderator:read:chat_settings+moderator:manage:chat_settings+moderator:read:chatters+moderator:read:followers+moderator:read:guest_star+moderator:manage:guest_star+moderator:read:shield_mode+moderator:manage:shield_mode+moderator:read:shoutouts+moderator:manage:shoutouts+moderator:read:unban_requests+moderator:manage:unban_requests+user:edit+user:edit:follows+user:read:blocked_users+user:manage:blocked_users+user:read:broadcast+user:manage:chat_color+user:read:email+user:read:emotes+user:read:follows+user:read:moderated_channels+user:read:subscriptions+user:manage:whispers+channel:bot+channel:moderate+chat:edit+chat:read+user:bot+user:read:chat+user:write:chat+whispers:read+whispers:edit+moderator:manage:warnings```
-
-After granting access, you'll be redirected to ```http://localhost:8888?code=<YOUR_CODE>```.
-
-Copy the code parameter from the URL.
-
-- Execute the following cURL request (replace placeholders):
-
-```
-curl -X POST 'https://id.twitch.tv/oauth2/token'
--H 'Content-Type: application/x-www-form-urlencoded'
--d 'client_id=<CLIENT_ID>&client_secret=<CLIENT_SECRET>&code=<CODE_FROM_BEFORE>&grant_type=authorization_code&redirect_uri=http://localhost:8888'
+```bash
+npm run auth
 ```
 
-The response will include access_token, refresh_token, and expires_in.
+Open the printed URL in a browser that is logged in with the **bot account** and grant access. The script stores the token as `bot-token` in the `tokens` table and refreshes it automatically from then on.
 
-Store Tokens in the Database in the tokens table. Make sure to set the name to
-  ``` bot-token ``` 
+The bot requests these scopes:
 
-Note: You can set expires_at to 0 initially.
+| Scope | Used for |
+| :-------- | :------- |
+| `user:bot` | reading chat via EventSub, chat bot badge |
+| `user:read:chat` | reading chat via EventSub |
+| `user:write:chat` | sending chat messages |
+| `user:read:moderated_channels` | checking for mod status in `-channel join` |
+| `user:manage:whispers` | receiving whispers |
+
+<details>
+<summary>Doing it manually instead</summary>
+
+Open this URL (logged in as the bot account):
+
+```
+https://id.twitch.tv/oauth2/authorize?client_id=<CLIENT_ID>&redirect_uri=http://localhost:8888&response_type=code&scope=user:bot+user:read:chat+user:write:chat+user:read:moderated_channels+user:manage:whispers
+```
+
+Copy the `code` parameter from the URL you get redirected to and exchange it:
+
+```bash
+curl -X POST 'https://id.twitch.tv/oauth2/token' \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'client_id=<CLIENT_ID>&client_secret=<CLIENT_SECRET>&code=<CODE>&grant_type=authorization_code&redirect_uri=http://localhost:8888'
+```
+
+Insert `access_token` and `refresh_token` into the `tokens` table with the name `bot-token` and `expiresAt` set to `0`.
+
+</details>
 
 ## 🚀 Running the Bot
 
@@ -78,22 +90,61 @@ Start the Bot
 npm run start
 ```
 
-The bot will automatically connect to Twitch and listen for chat events.
-
+The bot connects to Twitch and always joins its own channel. Type `-channel join <channel>` there to join other channels. The bot has to be a moderator in a channel before it can join it.
 
 ## Default Commands
 
-
-Default prefix is - and can be changed in the config.js
+Default prefix is `-` and can be changed with `BOT_PREFIX` in the .env or per channel with `-setprefix`.
 
 | Command | Description     | Permission                |
 | :-------- | :------- | :------------------------- |
 | -ping | pong | Everyone |
 | -setprefix | set the prefix in a channel | Mod |
-| -permission | get/update a users permission | Everyone |
+| -permission | get your permission; admins can update permissions below their own | Everyone |
 | -channel | join or part a channel | Admin |
 | -eval | evaluates a given js code | Dev |
 
+## ✍️ Writing Commands
+
+Every `.js` file in `commands/` (subfolders included) is a command. The global `bot` object gives access to everything else.
+
+```js
+export default {
+  name: 'hello', // defaults to the file name
+  description: 'says hello',
+  aliases: ['hi'],
+  usage: '<user>',
+  access: bot.permissions.default, // minimum permission, default: everyone
+  cooldown: bot.cooldown.short, // seconds per user, default: short (5s)
+  async execute(msg) {
+    if (!msg.args.length) {
+      return bot.commands.usage(msg, this);
+    }
+
+    // return a string to reply...
+    return `hello ${msg.args[0]}`;
+
+    // ...or an object:
+    // { text }              reply with text
+    // { error }             reply with error, resets the cooldown
+    // { text, reply: false } send without replying to the message
+    // { text, action: true } send as /me
+  }
+};
+```
+
+`msg` contains `text`, `args`, `prefix`, `command`, `channel`, `user` (including `user.perms`) and `send()` for sending extra messages.
+
+Event handlers for EventSub topics (stream online/offline, whispers, ...) live in `utils/eventsub/subscriptions.js`.
+
+## ⬆️ Upgrading From an Older Version
+
+The `subscriptions` and `users` tables are no longer used. Update the `tokens` table with:
+
+```sql
+ALTER TABLE tokens MODIFY expiresAt BIGINT DEFAULT NULL;
+DROP TABLE IF EXISTS subscriptions, users;
+```
 
 ## 🤝 Contributing
 
@@ -108,4 +159,3 @@ Got an idea, found a bug, or want to add a new feature? Contributions are always
 
 
 Thanks for helping make this bot template better
-

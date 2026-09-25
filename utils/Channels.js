@@ -1,12 +1,20 @@
 import config from '../config.js';
 
 export class Channels {
+  static updatableSettings = ['prefix'];
+
   constructor() {
     this.channelsMap = new Map();
   }
 
   async initialize() {
-    const channels = await bot.db.query(`SELECT * FROM channels`);
+    await bot.db.query(`INSERT IGNORE INTO channels (userId, login, prefix) VALUES (?, ?, ?)`, [
+      config.bot.userId,
+      config.bot.username.toLowerCase(),
+      config.bot.prefix
+    ]);
+
+    const channels = await bot.db.query(`SELECT userId, login, prefix FROM channels`);
     for (const channel of channels) {
       this.set(channel.userId, channel);
     }
@@ -17,7 +25,11 @@ export class Channels {
   }
 
   getAll() {
-    return  [...this.channelsMap.keys()];
+    return [...this.channelsMap.keys()];
+  }
+
+  count() {
+    return this.channelsMap.size;
   }
 
   set(userId, data) {
@@ -29,36 +41,30 @@ export class Channels {
   }
 
   async update(userId, setting, value) {
-    const channel = this.get(userId);
+    if (!Channels.updatableSettings.includes(setting)) {
+      throw new Error(`unknown channel setting "${setting}"`);
+    }
 
-    channel[setting] = value;
     await bot.db.query(`UPDATE channels SET ${setting} = ? WHERE userId = ?`, [value, userId]);
+    this.get(userId)[setting] = value;
   }
 
   async join(userId, login, prefix = config.bot.prefix) {
-
-    await Promise.all([
-      bot.conduitClient.subscribeToEvents([userId]),
-      bot.db.query(`INSERT INTO channels (userId, login, prefix) VALUES (?, ?, ?)`, [
-        userId,
-        login,
-        prefix
-      ])
-    ]);
-
-    this.set(userId, {
+    await bot.db.query(`INSERT INTO channels (userId, login, prefix) VALUES (?, ?, ?)`, [
       userId,
       login,
-      prefix,
-      mode: 1
-    });
+      prefix
+    ]);
+
+    this.set(userId, { userId, login, prefix });
+
+    return bot.eventsub.subscribe([userId]);
   }
 
   async part(userId) {
-    await Promise.all([
-      bot.conduitClient.unsubscribeFromEvents([userId]),
-      bot.db.query(`DELETE FROM channels WHERE userId = ?`, [userId]),
-      this.channelsMap.delete(userId)
-    ]);
+    await bot.eventsub.unsubscribe([userId]);
+    await bot.db.query(`DELETE FROM channels WHERE userId = ?`, [userId]);
+
+    this.channelsMap.delete(userId);
   }
 }

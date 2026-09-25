@@ -7,19 +7,15 @@ export class Cooldown {
     this.medium = 15;
     this.long = 30;
     this.veryLong = 60;
-
-    this.durations = {
-      veryShort: this.veryShort,
-      short: this.short,
-      medium: this.medium,
-      long: this.long,
-      veryLong: this.veryLong,
-    }
   }
 
   set(key, ttl) {
+    if (!ttl) return;
+
     clearTimeout(this.cooldownMap.get(key));
     const timeout = setTimeout(() => this.cooldownMap.delete(key), ttl * 1000);
+    timeout.unref();
+
     this.cooldownMap.set(key, timeout);
   }
 
@@ -30,5 +26,12 @@ export class Cooldown {
 
   has(key) {
     return this.cooldownMap.has(key);
+  }
+
+  hasOrSet(key, ttl) {
+    if (this.has(key)) return true;
+
+    this.set(key, ttl);
+    return false;
   }
 }

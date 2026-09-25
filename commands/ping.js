@@ -4,14 +4,14 @@ export default {
   aliases: ['pong'],
   access: bot.permissions.default,
   cooldown: bot.cooldown.veryShort,
-  async execute(msg, response) {
+  async execute(msg) {
     const messages = [
       `🏓 ${msg.command.trigger === 'pong' ? 'PING' : 'PONG'}`,
       `bot uptime: ${bot.utils.timeSince(bot.stats.runningSince)}`,
-      `channels: ${bot.channels.getAll().length}`,
+      `channels: ${bot.channels.count()}`,
       `commands executed: ${bot.utils.formatNumber(bot.stats.commandsExecuted)}`
     ];
 
-    return msg.sendAction(bot.utils.joinMessage(messages));
+    return { text: bot.utils.joinMessage(messages), action: true, reply: false };
   }
 };

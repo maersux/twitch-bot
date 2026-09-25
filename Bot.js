@@ -1,13 +1,13 @@
-import { readdirSync } from 'fs';
 import { Api } from './utils/Api.js';
-import { ConduitClient } from './utils/ConduitClient.js';
-import { Cooldown } from './utils/cooldown.js';
+import { Channels } from './utils/Channels.js';
+import { Commands } from './utils/Commands.js';
+import { Cooldown } from './utils/Cooldown.js';
 import { Database } from './utils/Database.js';
 import { Logger } from './utils/Logger.js';
-import { Permissions } from './utils/permissions.js';
-import { Utils } from './utils/utils.js';
+import { Permissions } from './utils/Permissions.js';
 import { Stats } from './utils/Stats.js';
-import { Channels } from './utils/Channels.js';
+import { Utils } from './utils/Utils.js';
+import { Conduit } from './utils/eventsub/Conduit.js';
 
 export class Bot {
   constructor() {
@@ -19,39 +19,26 @@ export class Bot {
     this.utils = new Utils();
     this.stats = new Stats();
 
-    this.conduitClient = new ConduitClient();
+    this.eventsub = new Conduit();
     this.permissions = new Permissions();
     this.cooldown = new Cooldown();
 
-    this.commands = new Map();
+    this.commands = new Commands();
     this.channels = new Channels();
   }
 
   async initialize() {
     await Promise.all([
-      this.loadCommands(),
+      this.commands.initialize(),
       this.channels.initialize(),
-      this.permissions.initialize(),
-      this.conduitClient.initialize()
+      this.permissions.initialize()
     ]);
+
+    await this.eventsub.initialize();
   }
 
-  async loadCommands() {
-    const commandFiles = readdirSync(`./commands`).filter((file) => file.endsWith('.js'));
-
-    for (const file of commandFiles) {
-      const command = await import(`./commands/${file}?${Date.now()}`);
-
-      if (!command?.default?.name) {
-        this.log.error(`failed to load Command ${file}`);
-        continue;
-      }
-
-      this.commands[command.default.name] = command.default;
-
-      for (const alias of command.default.aliases || []) {
-        this.commands[alias] = this.commands[command.default.name];
-      }
-    }
+  async teardown() {
+    this.eventsub.teardown();
+    await this.db.teardown();
   }
 }

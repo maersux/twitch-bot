@@ -5,50 +5,50 @@ export default {
   description: 'join or part a channel',
   access: bot.permissions.admin,
   usage: '<join|part> <channel>',
-  async execute(msg, response) {
-    if (msg.args.length < 2) {
-      return response(`usage: ${msg.prefix}${msg.command.trigger} ${this.usage}`, { error: true });
+  async execute(msg) {
+    const action = msg.args[0]?.toLowerCase();
+    if (msg.args.length < 2 || !['join', 'part'].includes(action)) {
+      return bot.commands.usage(msg, this);
     }
 
-    const action = msg.args[0].toLowerCase();
-    const channel = bot.utils.sanitizeUser(msg.args[1]);
-
-    const channelId = await bot.api.ivr.getUserId(channel);
-    if (!channelId) {
-      return response(`FeelsDankMan channel ${channel} not found`);
+    const login = bot.utils.sanitizeUser(msg.args[1]);
+    const user = await bot.api.getUser(login);
+    if (!user) {
+      return { error: `FeelsDankMan channel ${login} not found` };
     }
 
-    switch (action) {
-      case 'join': {
-        if (bot.channels.has(channelId)) {
-          return response(`already joined channel ${bot.utils.antiPing(channel)}`);
-        }
+    const { id: channelId, login: channel } = user;
 
-        const moderatedChannels = await bot.api.helix.getModeratingChannels();
-        if (!moderatedChannels.has(channelId)) {
-          return response(
-            `i'm not modded in ${bot.utils.antiPing(channel)}. please add @${config.bot.username} as a moderator in this channel and retry`
-          );
-        }
-
-        await bot.channels.join(channelId, channel);
-
-        return response(`joined channel ${bot.utils.antiPing(channel)}`);
+    if (action === 'join') {
+      if (bot.channels.has(channelId)) {
+        return { error: `already joined channel ${bot.utils.antiPing(channel)}` };
       }
 
-      case 'part': {
-        if (!bot.channels.has(channelId)) {
-          return response(`channel ${bot.utils.antiPing(channel)} is not joined`);
-        }
-
-        await bot.channels.part(channelId);
-
-        return response(`parted channel ${bot.utils.antiPing(channel)}`);
+      const moderatedChannels = await bot.api.helix.getModeratingChannels();
+      if (!moderatedChannels.has(channelId)) {
+        return {
+          error: `i'm not modded in ${bot.utils.antiPing(channel)}. please add @${config.bot.username} as a moderator in this channel and retry`
+        };
       }
 
-      default: {
-        return response(`usage: ${this.usage}`, { error: true });
+      const subscribed = await bot.channels.join(channelId, channel);
+      if (!subscribed) {
+        return `joined channel ${bot.utils.antiPing(channel)}, but some events couldn't be subscribed to. check the logs`;
       }
+
+      return `joined channel ${bot.utils.antiPing(channel)}`;
     }
+
+    if (!bot.channels.has(channelId)) {
+      return { error: `channel ${bot.utils.antiPing(channel)} is not joined` };
+    }
+
+    if (channelId === config.bot.userId) {
+      return { error: `can't part the bot's own channel` };
+    }
+
+    await bot.channels.part(channelId);
+
+    return `parted channel ${bot.utils.antiPing(channel)}`;
   }
 };

@@ -4,11 +4,11 @@ export class Stats {
     this.runningSince = Math.floor(Date.now() / 1000);
   }
 
-  async commandExecuted(command = '') {
+  commandExecuted(command = '') {
     if (!command) return;
 
     this.commandsExecuted++;
-    await bot.db.query(
+    return bot.db.tryQuery(
       'INSERT INTO commandStats (command, count) VALUES (?, 1) ON DUPLICATE KEY UPDATE count = count + 1',
       [command]
     );
